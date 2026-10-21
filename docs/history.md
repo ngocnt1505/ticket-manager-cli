@@ -715,3 +715,50 @@ test('M6: rejects a non-string title with INVALID_TITLE', () => {
 
 - ✅ Đỏ đúng lý do – và khác các vòng trước: hàm **có** ném lỗi nhưng **sai loại** (`TypeError` thay vì `ValidationError`). `assert.throws` với `{ name, code }` phân biệt được điều này; nếu chỉ viết `assert.throws(() => validateTitle(bad))` (assertion yếu, Report §6.2) thì test đã **xanh** với code hiện tại vì bất kỳ lỗi nào cũng thỏa.
 - 5 test cũ vẫn xanh.
+
+> **Cập nhật Bước 14:** Ngọc commit `0f3605c test(models): add failing test for non-string title`.
+
+---
+
+## Bước 15 – Vòng TDD M6: bước Green (kiểm tra kiểu trước khi trim)
+
+**Thời gian:** 2026-10-21 · **Người làm:** Claude viết code (theo yêu cầu); Ngọc review và commit · **Commit:** chưa
+
+### What
+
+Thêm kiểm tra `typeof title !== 'string'` ở **đầu** `validateTitle`; đánh dấu `[x] M6`. Nhóm Title (M1–M6) hoàn tất.
+
+### Why
+
+- Phải kiểm tra kiểu **trước** `title.trim()`: gọi `.trim()` trên `undefined`/`42` chính là chỗ sinh ra `TypeError`.
+- Dùng `typeof … !== 'string'` thay vì `(title ?? '').trim()` (cách cũ của Week 1): `??` chỉ xử lý `undefined`/`null`; số, object, mảng vẫn ném `TypeError`.
+
+### How
+
+```js
+const { ValidationError } = require('../errors');
+
+function validateTitle(title) {
+  if (typeof title !== 'string') {
+    throw new ValidationError('INVALID_TITLE', 'Title must be text');
+  }
+  const clean = title.trim();
+  if (!clean) throw new ValidationError('EMPTY_TITLE', 'Title is required');
+  if (clean.length > 100) {
+    throw new ValidationError('TITLE_TOO_LONG', 'Title must be at most 100 characters');
+  }
+  return clean;
+}
+```
+
+```
+✔ M1 · ✔ M2 · ✔ M3 · ✔ M5 · ✔ M4 · ✔ M6
+ℹ tests 6 · pass 6 · fail 0   (exit 0)
+```
+
+**Mutation thủ công – thay bằng đúng cách cũ của Week 1** `const clean = (title ?? '').trim();` → ✖ **M6** (`pass 5 · fail 1`), vì `42`, `{}`, `['x']` vẫn ném `TypeError`. Khôi phục → 6/6. Xác nhận lý do test M6 thử **5 kiểu** chứ không chỉ `undefined`.
+
+### Kết quả / Ghi chú
+
+- ✅ Nhóm **Title (M1–M6) hoàn tất**. `TEST-LIST.md`: 6/77.
+- Bước tiếp theo: **Refactor đầu tiên** – số `100` xuất hiện 2 lần (điều kiện và câu thông báo), đặt tên thành hằng `MAX_TITLE_LENGTH`.

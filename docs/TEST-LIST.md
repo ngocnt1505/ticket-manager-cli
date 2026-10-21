@@ -20,7 +20,7 @@ Danh sách kịch bản cần test, viết **trước khi code** (Canon TDD, Rep
 - [x] **M3** Title đúng 100 ký tự → hợp lệ *(W1, biên)*
 - [x] **M4** Title 101 ký tự → lỗi `TITLE_TOO_LONG` *(W1, biên)*
 - [x] **M5** Độ dài tính **sau khi trim**: 100 ký tự + khoảng trắng hai đầu → hợp lệ *(W1)*
-- [ ] **M6** Title không phải chuỗi (`undefined`, `null`, `42`, `{}`, `['x']`) → lỗi `INVALID_TITLE`, không phải `TypeError` *(W1)*
+- [x] **M6** Title không phải chuỗi (`undefined`, `null`, `42`, `{}`, `['x']`) → lỗi `INVALID_TITLE`, không phải `TypeError` *(W1)*
 
 ### Status và priority
 
