@@ -2452,3 +2452,79 @@ test('D10: when writing fails, save reports SAVE_FAILED and the old file stays b
 
 - ✅ Đỏ đúng lý do; 56 test cũ vẫn xanh; không sót thư mục tạm.
 - Commit đề xuất: `test(storage): add failing integration tests for load and save`.
+
+> **Cập nhật Bước 45:** Ngọc commit `7007a02 test(storage): add failing integration tests for load and save`.
+
+---
+
+## Bước 46 – Vòng 11: bước Green (`load`, `save` – ghi nguyên tử)
+
+**Thời gian:** 2026-10-21 · **Người làm:** Claude viết code (theo yêu cầu); Ngọc review và commit · **Commit:** chưa
+
+### What
+
+- Viết `load` và `save` trong `src/storage/jsonStore.js`; đánh dấu `[x]` D7–D12.
+- Ghi 2 mục Phát sinh **P4**, **P5** cho những trường hợp code chưa xử lý vì chưa có test.
+
+### How
+
+```js
+function load(filePath) {
+  let text;
+  try {
+    text = fs.readFileSync(filePath, 'utf8');
+  } catch (err) {
+    if (err.code === 'ENOENT') return [];
+    throw err;
+  }
+  return parseTickets(text, filePath);
+}
+
+// Atomic write: write a temporary file next to the real one, then rename it over.
+// If anything fails, the previous file is still complete.
+function save(filePath, tickets) {
+  const tmpPath = `${filePath}.tmp`;
+  try {
+    fs.writeFileSync(tmpPath, serializeTickets(tickets));
+    fs.renameSync(tmpPath, filePath);
+  } catch (err) {
+    throw new StorageError(
+      'SAVE_FAILED',
+      `Cannot save tickets to ${filePath} (${err.code}).`,
+    );
+  }
+}
+```
+
+### Why
+
+- **`load`**: chỉ `ENOENT` (không tồn tại) được hiểu là "chưa có ticket" (D7); phần còn lại giao cho `parseTickets` đã test (D9 dùng lại toàn bộ kiểm tra của vòng 10).
+- **Ghi nguyên tử bằng file tạm + `rename`**: `rename` trong cùng thư mục là thao tác "được ăn cả" – file thật hoặc là bản cũ nguyên vẹn, hoặc là bản mới đầy đủ; không bao giờ là nửa vời. Trên Windows `renameSync` ghi đè được file đích đã tồn tại (đã chạy thật: D8, D12 xanh).
+- **Không tự tạo thư mục** (D11, quyết định của Ngọc) → thiếu thư mục thì `writeFileSync` báo `ENOENT` → `SAVE_FAILED`.
+- Thông báo có **đường dẫn và mã lỗi gốc** của hệ điều hành – kiểm tra bằng tay trên Windows:
+
+```
+tmp là thư mục -> Cannot save tickets to C:\…\t.json (EISDIR).
+thiếu thư mục  -> Cannot save tickets to C:\…\no\t.json (ENOENT).
+```
+
+```
+ℹ tests 62 · pass 62 · fail 0   (exit 0)
+```
+
+**Mutation thủ công** – mỗi quyết định thiết kế có đúng một test canh:
+
+| Mutation | Test đỏ |
+|---|---|
+| Ghi thẳng vào `tickets.json` (bỏ file tạm) | D10 |
+| Tự tạo thư mục cha (`mkdirSync … recursive`) | D11 |
+| `copyFileSync` thay `rename` (để lại file tạm) | D12 |
+| File chưa có thì ném lỗi | D7 |
+
+### Kết quả / Ghi chú
+
+- ✅ D7–D12 xanh. **Storage: 12/12 mục + P3.**
+- Cố ý chưa xử lý (không có test → không viết code), ghi thành Phát sinh chờ Ngọc quyết định:
+  - **P4** – lỗi đọc khác `ENOENT` (ví dụ `TICKETS_FILE` trỏ vào thư mục) hiện ném lỗi thô của Node → CLI sẽ coi là bug.
+  - **P5** – `rename` lỗi sau khi đã ghi file tạm → file tạm bị bỏ lại.
+- Commit đề xuất: `feat(storage): load and atomically save the ticket file`.

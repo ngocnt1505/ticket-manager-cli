@@ -108,12 +108,12 @@ Service nhận mảng tickets và trả về mảng **mới**; "không lưu" ở
 
 ### Đọc/ghi file thật (I)
 
-- [ ] **D7** `load`: file chưa tồn tại → `[]`, và **không** tự tạo file *(W1)*
-- [ ] **D8** `save` rồi `load` → đúng dữ liệu đã ghi *(W1)*
-- [ ] **D9** `load`: file hỏng → lỗi `CORRUPTED_FILE`, file giữ nguyên **từng byte** *(W1)*
-- [ ] **D10** `save`: ghi thất bại → lỗi `SAVE_FAILED`, file gốc giữ nguyên từng byte *(W1)*
-- [ ] **D11** `save`: thư mục cha không tồn tại → lỗi `SAVE_FAILED`, **không** tự tạo thư mục *(mới, theo DECISIONS §7)*
-- [ ] **D12** `save` xong không để lại file tạm *(mới)*
+- [x] **D7** `load`: file chưa tồn tại → `[]`, và **không** tự tạo file *(W1)*
+- [x] **D8** `save` rồi `load` → đúng dữ liệu đã ghi *(W1)*
+- [x] **D9** `load`: file hỏng → lỗi `CORRUPTED_FILE`, file giữ nguyên **từng byte** *(W1)*
+- [x] **D10** `save`: ghi thất bại → lỗi `SAVE_FAILED`, file gốc giữ nguyên từng byte *(W1)*
+- [x] **D11** `save`: thư mục cha không tồn tại → lỗi `SAVE_FAILED`, **không** tự tạo thư mục *(mới, theo DECISIONS §7)*
+- [x] **D12** `save` xong không để lại file tạm *(mới)*
 
 ---
 
@@ -152,3 +152,5 @@ Trường hợp nghĩ ra trong lúc làm – thêm vào đây trước, làm sau
 - [x] **P1** Tags không phải chuỗi (`null`, `42`, `{}`, `['bug']`) → lỗi `INVALID_TAG` thay vì `TypeError`. *(nghĩ ra ở vòng 4; Ngọc quyết định **làm** – để mọi dữ liệu sai đều ra lỗi có `code`, nhất quán với title/description)*
 - [x] **P2** `createTicket` thành công **không sửa mảng đầu vào** (trả mảng mới) – theo `DECISIONS.md` §9. *(phát hiện ở vòng 6 bằng mutation: đổi thành `tickets.push(ticket)` mà 32/32 vẫn xanh; Ngọc quyết định **làm ngay**)*
 - [x] **P3** File là mảng nhưng **phần tử hỏng** (`[1]`, `[null]`, ticket thiếu `id`, `id` trùng) → `CORRUPTED_FILE` thay vì lỗi khó hiểu ở bước sau (ví dụ `create` sinh id `NaN`). *(nghĩ ra ở vòng 10; Ngọc quyết định **làm, chỉ kiểm tra `id`** – không kiểm tra các trường khác để tránh over-testing, Report §6.1)*
+- [ ] **P4** `load` đọc được file nhưng **lỗi khác "không tồn tại"** (ví dụ `TICKETS_FILE` trỏ vào một thư mục → `EISDIR`) → `StorageError` `READ_FAILED` có đường dẫn, thay vì lỗi thô của Node (CLI sẽ coi là bug). *(nghĩ ra ở vòng 11; chờ Ngọc quyết định)*
+- [ ] **P5** `save`: file tạm đã ghi xong nhưng bước `rename` lỗi → **xóa file tạm**, không để rác `tickets.json.tmp`. *(nghĩ ra ở vòng 11; chờ Ngọc quyết định)*
