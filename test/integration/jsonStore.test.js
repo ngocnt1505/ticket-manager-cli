@@ -56,3 +56,25 @@ test('D12: save leaves no temporary file behind', (t) => {
   save(file, [{ id: 1 }, { id: 2 }]);
   assert.deepEqual(fs.readdirSync(dir), ['tickets.json']);
 });
+
+test('P4: a path that cannot be read (a folder) fails with READ_FAILED and names it', (t) => {
+  const dir = tempDir(t);
+  assert.throws(
+    () => load(dir),
+    (err) => {
+      assert.equal(err.name, 'StorageError');
+      assert.equal(err.code, 'READ_FAILED');
+      assert.ok(err.message.includes(dir), 'message names the path');
+      return true;
+    },
+  );
+});
+
+test('P5: when the final rename fails, save removes its temporary file', (t) => {
+  const dir = tempDir(t);
+  const target = path.join(dir, 'tickets.json');
+  // The temporary file can be written, but renaming it over a folder fails.
+  fs.mkdirSync(target);
+  assert.throws(() => save(target, [{ id: 1 }]), { name: 'StorageError', code: 'SAVE_FAILED' });
+  assert.deepEqual(fs.readdirSync(dir), ['tickets.json']);
+});

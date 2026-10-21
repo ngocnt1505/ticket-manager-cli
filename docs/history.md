@@ -2528,3 +2528,55 @@ thiếu thư mục  -> Cannot save tickets to C:\…\no\t.json (ENOENT).
   - **P4** – lỗi đọc khác `ENOENT` (ví dụ `TICKETS_FILE` trỏ vào thư mục) hiện ném lỗi thô của Node → CLI sẽ coi là bug.
   - **P5** – `rename` lỗi sau khi đã ghi file tạm → file tạm bị bỏ lại.
 - Commit đề xuất: `feat(storage): load and atomically save the ticket file`.
+
+> **Cập nhật Bước 46:** Ngọc commit và push `1ebf434 feat(storage): load and atomically save the ticket file`.
+
+---
+
+## Bước 47 – P4 (`READ_FAILED`) và P5 (dọn file tạm): Ngọc quyết định làm cả hai; bước Red
+
+**Thời gian:** 2026-10-21 · **Người làm:** Ngọc quyết định; Claude viết test (theo yêu cầu); Ngọc review và commit · **Commit:** chưa
+
+### What
+
+Thêm 2 integration test vào `test/integration/jsonStore.test.js`; ghi "Ngọc quyết định làm" vào P4, P5 trong `TEST-LIST.md`.
+
+### Why
+
+- **P4:** người dùng gõ nhầm `TICKETS_FILE` thành một thư mục → hiện Node ném lỗi thô `EISDIR`; tầng CLI sẽ không nhận ra đây là lỗi dữ liệu (exit 1) mà coi là bug. Bọc thành `StorageError('READ_FAILED')` có đường dẫn → thông báo rõ ràng.
+- **P5:** tình huống thật để `rename` lỗi **sau khi** file tạm đã ghi xong: đích `tickets.json` là một **thư mục**. Không mock – giống kỹ thuật D10.
+- Gom 2 mục vào một vòng: cả hai đều nhỏ, cùng file, cùng tầng storage.
+
+### How
+
+```js
+test('P4: a path that cannot be read (a folder) fails with READ_FAILED and names it', (t) => {
+  const dir = tempDir(t);
+  assert.throws(() => load(dir), (err) => {
+    assert.equal(err.name, 'StorageError');
+    assert.equal(err.code, 'READ_FAILED');
+    assert.ok(err.message.includes(dir), 'message names the path');
+    return true;
+  });
+});
+
+test('P5: when the final rename fails, save removes its temporary file', (t) => {
+  const dir = tempDir(t);
+  const target = path.join(dir, 'tickets.json');
+  // The temporary file can be written, but renaming it over a folder fails.
+  fs.mkdirSync(target);
+  assert.throws(() => save(target, [{ id: 1 }]), { name: 'StorageError', code: 'SAVE_FAILED' });
+  assert.deepEqual(fs.readdirSync(dir), ['tickets.json']);
+});
+```
+
+```
+✖ P4  actual: 'Error'   expected: 'StorageError'
+✖ P5  actual: [ 'tickets.json', 'tickets.json.tmp' ]   expected: [ 'tickets.json' ]
+ℹ tests 64 · pass 62 · fail 2
+```
+
+### Kết quả / Ghi chú
+
+- ✅ Cả hai đỏ đúng lý do – và output **cho thấy chính xác vấn đề**: P4 ra lỗi thô `Error`; P5 để lại `tickets.json.tmp`.
+- Commit đề xuất: `test(storage): add failing tests for read errors and temp file cleanup`.
