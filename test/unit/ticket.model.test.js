@@ -234,3 +234,10 @@ test('M27: an update without any field fails with NO_CHANGES', () => {
     code: 'NO_CHANGES',
   });
 });
+
+test('P7: building a ticket with an invalid status fails with INVALID_STATUS', () => {
+  assert.throws(() => buildTicket({ title: 'x', status: 'closed' }, { id: 1, now: NOW }), {
+    name: 'ValidationError',
+    code: 'INVALID_STATUS',
+  });
+});

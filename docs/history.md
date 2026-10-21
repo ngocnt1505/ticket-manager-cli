@@ -3562,3 +3562,54 @@ Thực hiện đủ 6 mục kiểm tra của kế hoạch Giai đoạn 6 và ghi
 
 - Commit đề xuất: `docs: move Week 1 material to its own repository and fix links`.
 - Tiếp theo: làm **P7, P8** (Ngọc chọn làm cả hai) rồi cập nhật số liệu trong `TEST-RESULTS.md`.
+
+> **Cập nhật Bước 63:** Ngọc commit và push `9b352cf docs: move Week 1 material to its own repository and fix links` (9 file, có 4 file bị xóa).
+
+---
+
+## Bước 64 – P7, P8: hai test canh lấp lỗ hổng tìm được ở Giai đoạn 6
+
+**Thời gian:** 2026-10-21 · **Người làm:** Ngọc quyết định làm; Claude viết test (theo yêu cầu); Ngọc review và commit · **Commit:** chưa
+
+### What
+
+- **P7** (`test/unit/ticket.model.test.js`): `buildTicket` với `status: 'closed'` → `INVALID_STATUS`.
+- **P8** (`test/unit/cli.test.js`): `update --tags "UI, bug"` → `Updated ticket #1 (tags: ui, bug)`; `update --tags=` → `Updated ticket #1 (tags: (none))`.
+- Đánh dấu `[x]` P7, P8 – `TEST-LIST.md` **không còn mục nào chưa làm hay chờ quyết định**.
+
+### Why
+
+- Cả hai là **test thiếu**, code đã đúng → test canh: xanh ngay, chứng minh tác dụng bằng mutation (giống M3, M5, P2).
+- P7 đặt ở **tầng model** – nơi mutation #2 sửa (`buildTicket`) – để test chỉ đúng chỗ hỏng khi đỏ.
+- P8 kiểm tra cả hai nhánh của `formatValue` (có tag / không còn tag) – đúng nhánh coverage báo chưa chạy.
+
+### How
+
+```js
+test('P7: building a ticket with an invalid status fails with INVALID_STATUS', () => {
+  assert.throws(() => buildTicket({ title: 'x', status: 'closed' }, { id: 1, now: NOW }), {
+    name: 'ValidationError',
+    code: 'INVALID_STATUS',
+  });
+});
+
+test('P8: update --tags confirms the stored tags, or (none) when they are removed', () => {
+  const { exec } = cli();
+  exec('create', '--title', 'Fix login', '--tags', 'bug');
+  assert.equal(exec('update', '1', '--tags', 'UI, bug').stdout, 'Updated ticket #1 (tags: ui, bug)');
+  assert.equal(exec('update', '1', '--tags=').stdout, 'Updated ticket #1 (tags: (none))');
+});
+```
+
+| Lần chạy | Kết quả |
+|---|---|
+| Code thật | ✔ 86/86 (70 unit · 16 integration) |
+| Mutation #2 – bỏ `validateStatus` trong `buildTicket` (trước đây **lọt**) | ✖ **P7** |
+| Mutation – bỏ `'(none)'` khi không còn tag | ✖ **P8** |
+| Coverage | **100 %** dòng · **100 %** nhánh · **100 %** hàm (trước: 99,31 % nhánh) |
+| Chạy lại cả đợt 10 mutation của Giai đoạn 6 | **10/10 bị bắt** (trước: 9/10) |
+
+### Kết quả / Ghi chú
+
+- ✅ Hai lỗ hổng của Giai đoạn 6 đã được lấp; số liệu mới sẽ được ghi lại vào `TEST-RESULTS.md` sau khi push (để bước clone sạch kiểm tra đúng commit cuối).
+- Commit đề xuất: `test: cover invalid status on create and the update tags message`.

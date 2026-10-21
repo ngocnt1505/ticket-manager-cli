@@ -171,3 +171,10 @@ test('P6b: an unexpected error exits 1 with a short message and no stack trace',
   assert.equal(code, 1);
   assert.deepEqual(err, ['Unexpected error: disk on fire']);
 });
+
+test('P8: update --tags confirms the stored tags, or (none) when they are removed', () => {
+  const { exec } = cli();
+  exec('create', '--title', 'Fix login', '--tags', 'bug');
+  assert.equal(exec('update', '1', '--tags', 'UI, bug').stdout, 'Updated ticket #1 (tags: ui, bug)');
+  assert.equal(exec('update', '1', '--tags=').stdout, 'Updated ticket #1 (tags: (none))');
+});
