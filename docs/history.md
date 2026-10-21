@@ -2731,3 +2731,89 @@ test('C4: list prints one line per ticket with id, status, priority, title and t
 - ✅ Đỏ đúng lý do; 64 test cũ vẫn xanh.
 - C2 đòi thông báo nhắc tới `--title` (tên option người dùng gõ), không phải câu kỹ thuật `Title must be text` của model.
 - Commit đề xuất: `test(cli): add failing tests for create and list commands`.
+
+> **Cập nhật Bước 49:** Ngọc commit `a0455b1 test(cli): add failing tests for create and list commands`.
+
+---
+
+## Bước 50 – Vòng 12: bước Green (khung CLI, lệnh `create`, `list`)
+
+**Thời gian:** 2026-10-21 · **Người làm:** Claude viết code (theo yêu cầu); Ngọc review và commit · **Commit:** chưa
+
+### What
+
+- `src/errors.js`: thêm `UsageError` (dòng lệnh sai – thiếu option, lệnh lạ…).
+- `src/commands/create.js`, `src/commands/list.js`: mỗi lệnh khai báo `options` của nó và hàm `execute`.
+- `src/cli.js`: `run(argv, io)` – chọn lệnh, phân tích tham số bằng `util.parseArgs`, gọi lệnh, đổi lỗi thành exit code.
+- Đánh dấu `[x]` C1–C4.
+
+### Why
+
+- **Tầng commands mỏng**: mỗi lệnh chỉ làm 3 việc – đọc option → gọi service (đã test ở 4.2) → in kết quả; `create` thêm bước `store.save`. Không có luật nghiệp vụ nào ở đây.
+- **`util.parseArgs` có sẵn trong Node** – không cài thư viện ngoài (commander, yargs…), đúng quyết định tuần 1.
+- **Kiểm tra `--title` ở tầng lệnh** (`UsageError('MISSING_TITLE')`) thay vì để model báo `INVALID_TITLE`: tầng CLI nói bằng ngôn ngữ của người gõ lệnh (C2).
+- **Thứ tự `load` → service → `save`** (`DECISIONS.md` §9): service ném lỗi thì không tới `save`.
+- **Chỉ làm đủ cho test**: hiện mới xử lý `UsageError` → exit 2. Lệnh lạ, `ValidationError` → 2, `NotFoundError`/`StorageError` → 1, lỗi bất ngờ không in stack trace – sẽ được các test C8, C9, C15, C16 "kéo" ra ở các vòng sau.
+
+### How
+
+```js
+// src/cli.js
+const COMMANDS = {
+  create: require('./commands/create'),
+  list: require('./commands/list'),
+};
+
+// Runs one command and returns the exit code. Everything outside the program
+// (output, clock, ticket storage) comes in through `io`, so tests can fake it.
+function run(argv, io) {
+  const [name, ...args] = argv;
+  const command = COMMANDS[name];
+  try {
+    const { values } = parseArgs({ args, options: command.options, allowPositionals: true });
+    command.execute(values, { store: io.store, now: io.now(), print: io.stdout });
+    return 0;
+  } catch (err) {
+    if (err instanceof UsageError) {
+      io.stderr(`Error: ${err.message}`);
+      return 2;
+    }
+    throw err;
+  }
+}
+```
+
+```js
+// src/commands/create.js – execute
+if (values.title === undefined) {
+  throw new UsageError('MISSING_TITLE', 'Missing required option --title');
+}
+const { tickets, ticket } = createTicket(store.load(), values, now);
+store.save(tickets);
+print(`Created ticket #${ticket.id}: ${ticket.title}`);
+```
+
+```js
+// src/commands/list.js – "#1  open         high    Login bug  [bug, auth]"
+function formatLine(ticket) {
+  return [
+    `#${ticket.id}`,
+    ticket.status.padEnd('in_progress'.length),
+    ticket.priority.padEnd('medium'.length),
+    ticket.title,
+    ticket.tags.length > 0 ? `[${ticket.tags.join(', ')}]` : '',
+  ].join('  ').trimEnd();
+}
+```
+
+```
+ℹ tests 68 · pass 68 · fail 0   (exit 0)
+```
+
+**Mutation thủ công:** lưu sai dữ liệu → ✖ C1, C4 · list rỗng không in thông báo → ✖ C3 · in lỗi ra **stdout** thay vì stderr → ✖ C2.
+
+### Kết quả / Ghi chú
+
+- ✅ C1–C4 xanh.
+- Cột status/priority căn bằng `padEnd` theo **giá trị dài nhất** (`'in_progress'`, `'medium'`) – viết tên giá trị thay vì số `11`, `6` để người đọc hiểu vì sao.
+- Commit đề xuất: `feat(cli): add create and list commands`.

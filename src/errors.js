@@ -1,5 +1,5 @@
 // Every expected failure carries a stable `code`; `name` tells the kind of failure
-// (the CLI will map ValidationError → exit 2, NotFoundError and StorageError → exit 1).
+// (the CLI maps UsageError and ValidationError → exit 2, NotFoundError and StorageError → exit 1).
 class TicketError extends Error {
   constructor(code, message) {
     super(message);
@@ -14,4 +14,7 @@ class NotFoundError extends TicketError {}
 
 class StorageError extends TicketError {}
 
-module.exports = { TicketError, ValidationError, NotFoundError, StorageError };
+// The command line itself is wrong (missing option, unknown command...).
+class UsageError extends TicketError {}
+
+module.exports = { TicketError, ValidationError, NotFoundError, StorageError, UsageError };

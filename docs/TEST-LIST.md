@@ -121,10 +121,10 @@ Service nhận mảng tickets và trả về mảng **mới**; "không lưu" ở
 
 ### Lớp commands với stdout/stderr giả (U/I)
 
-- [ ] **C1** `create` thành công → in id mới ra stdout, exit 0 *(W1)*
-- [ ] **C2** `create` thiếu `--title` → stderr, stdout trống, exit 2, không ghi file *(W1)*
-- [ ] **C3** `list` rỗng → thông báo thân thiện (`No tickets found.`), exit 0 *(W1)*
-- [ ] **C4** `list` in mỗi ticket một dòng: id, status, priority, title, tags *(mới)*
+- [x] **C1** `create` thành công → in id mới ra stdout, exit 0 *(W1)*
+- [x] **C2** `create` thiếu `--title` → stderr, stdout trống, exit 2, không ghi file *(W1)*
+- [x] **C3** `list` rỗng → thông báo thân thiện (`No tickets found.`), exit 0 *(W1)*
+- [x] **C4** `list` in mỗi ticket một dòng: id, status, priority, title, tags *(mới)*
 - [ ] **C5** `show` in đủ các trường *(W1)*
 - [ ] **C6** `update` thành công → xác nhận thay đổi, exit 0 *(W1)*
 - [ ] **C7** `update` không có option nào → exit 2 *(mới)*
