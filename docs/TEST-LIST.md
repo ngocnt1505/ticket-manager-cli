@@ -150,4 +150,4 @@ Service nhận mảng tickets và trả về mảng **mới**; "không lưu" ở
 Trường hợp nghĩ ra trong lúc làm – thêm vào đây trước, làm sau.
 
 - [x] **P1** Tags không phải chuỗi (`null`, `42`, `{}`, `['bug']`) → lỗi `INVALID_TAG` thay vì `TypeError`. *(nghĩ ra ở vòng 4; Ngọc quyết định **làm** – để mọi dữ liệu sai đều ra lỗi có `code`, nhất quán với title/description)*
-- [ ] **P2** `createTicket` thành công **không sửa mảng đầu vào** (trả mảng mới) – theo `DECISIONS.md` §9. *(phát hiện ở vòng 6 bằng mutation: đổi thành `tickets.push(ticket)` mà 32/32 vẫn xanh; chờ Ngọc quyết định)*
+- [x] **P2** `createTicket` thành công **không sửa mảng đầu vào** (trả mảng mới) – theo `DECISIONS.md` §9. *(phát hiện ở vòng 6 bằng mutation: đổi thành `tickets.push(ticket)` mà 32/32 vẫn xanh; Ngọc quyết định **làm ngay**)*

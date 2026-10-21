@@ -34,3 +34,13 @@ test('S4: invalid input throws and leaves the given list unchanged', () => {
   });
   assert.deepEqual(existing, snapshot);
 });
+
+test('P2: creating a ticket returns a new list and leaves the given list unchanged', () => {
+  const existing = [buildTicket({ title: 'Keep me' }, { id: 1, now: NOW })];
+  const snapshot = structuredClone(existing);
+  const result = createTicket(existing, { title: 'New' }, NOW);
+  // Precondition: a ticket really was added to the returned list.
+  assert.equal(result.tickets.length, 2);
+  assert.notEqual(result.tickets, existing);
+  assert.deepEqual(existing, snapshot);
+});

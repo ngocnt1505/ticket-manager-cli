@@ -1764,3 +1764,49 @@ function createTicket(tickets, input, now) {
 - ✅ S1–S4 xanh. `TEST-LIST.md`: 32 mục `[x]`.
 - ⚠️ **P2**: S4 chỉ kiểm tra "mảng đầu vào không đổi" khi **lỗi**; khi **thành công** thì chưa có test → mutation `push` lọt. Ghi vào Phát sinh, chờ Ngọc quyết định.
 - Commit đề xuất: `feat(services): create a ticket with the next id`.
+
+> **Cập nhật Bước 32:** Ngọc commit và push `855b5fa feat(services): create a ticket with the next id`. **Vòng 6 hoàn tất.**
+
+---
+
+## Bước 33 – P2: test canh "tạo thành công không sửa mảng đầu vào"
+
+**Thời gian:** 2026-10-21 · **Người làm:** Ngọc quyết định làm ngay; Claude viết test (theo yêu cầu); Ngọc review và commit · **Commit:** chưa
+
+### What
+
+Thêm test P2 vào `test/unit/ticket.service.test.js`; đánh dấu `[x] P2`.
+
+### Why
+
+- Lấp lỗ hổng do mutation phát hiện ở Bước 32: cam kết `DECISIONS.md` §9 ("không sửa mảng đầu vào") mới chỉ được kiểm tra khi **lỗi** (S4).
+- Ngọc chọn **làm ngay** thay vì để sau: `updateTicket` (vòng 9) cũng trả mảng mới, có cùng rủi ro – lấp sớm để quy ước được khóa bằng test từ đầu.
+- Đây là **test canh** (như M3, M5): code đã đúng nên test xanh ngay; tác dụng được chứng minh bằng mutation.
+- Có **điều kiện tiền đề** `result.tickets.length === 2` (bài học Bước 28): chắc chắn ticket thật sự được thêm, nếu không thì "mảng gốc không đổi" chẳng chứng minh gì.
+
+### How
+
+```js
+test('P2: creating a ticket returns a new list and leaves the given list unchanged', () => {
+  const existing = [buildTicket({ title: 'Keep me' }, { id: 1, now: NOW })];
+  const snapshot = structuredClone(existing);
+  const result = createTicket(existing, { title: 'New' }, NOW);
+  // Precondition: a ticket really was added to the returned list.
+  assert.equal(result.tickets.length, 2);
+  assert.notEqual(result.tickets, existing);
+  assert.deepEqual(existing, snapshot);
+});
+```
+
+| Lần chạy | Kết quả |
+|---|---|
+| Code thật (`[...tickets, ticket]`) | ✔ 33/33 |
+| Mutation `tickets.push(ticket)` (code được in ra để chắc đúng cú pháp) | ✖ **P2** – `pass 32 · fail 1` |
+| Khôi phục | ✔ 33/33 |
+
+### Kết quả / Ghi chú
+
+- ✅ Lỗ hổng ở Bước 32 đã được lấp: cùng một mutation, trước P2 thì 32/32 xanh, sau P2 thì bị bắt.
+- P2 là mục Phát sinh thứ hai đi trọn quy trình; khác P1 ở chỗ được **mutation testing phát hiện** chứ không phải nghĩ ra khi viết test.
+- Commit đề xuất: `test(services): ensure create does not modify the given list` (dùng `test:` vì chỉ thêm test, code không đổi).
+- Tiếp theo: **vòng 7 – `listTickets` (S5–S13)**.
