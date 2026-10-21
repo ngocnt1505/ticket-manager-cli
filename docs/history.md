@@ -672,3 +672,46 @@ test('M5: measures the length after trimming', () => {
 - Mỗi test bắt được một lỗi mà test khác không bắt: **M3** bắt lệch biên, **M5** bắt đo sai chỗ (trước trim). → Không test nào thừa.
 - Commit đề xuất: `test(models): add boundary tests for title length` – dùng `test:` vì chỉ thêm test, không đổi code.
 - `TEST-LIST.md`: 5/77.
+
+> **Cập nhật Bước 13:** Ngọc commit `2bfcefa test(models): add boundary tests for title length`.
+
+---
+
+## Bước 14 – Vòng TDD M6 (title không phải chuỗi → `INVALID_TITLE`): bước Red
+
+**Thời gian:** 2026-10-21 · **Người làm:** Claude viết test (theo yêu cầu); Ngọc review và commit · **Commit:** chưa
+
+### What
+
+Thêm test M6: `validateTitle` nhận `undefined`, `null`, `42`, `{}`, `['x']` phải ném `ValidationError` với `code: 'INVALID_TITLE'`.
+
+### Why
+
+- Ở tầng CLI, người dùng gõ `tickets create` mà quên `--title` thì title là `undefined`. Nếu hàm ném `TypeError` (lỗi lập trình), CLI sẽ không phân biệt được với một bug thật → không chọn được exit code 2, và người dùng thấy thông báo khó hiểu.
+- Đây đúng là tình huống Report tuần 1 Mã 2b: phiên bản cũ dùng `(title ?? '').trim()` thì `undefined`/`null` qua được nhưng `validateTitle(42)` vẫn ném `TypeError: title.trim is not a function`. Vì vậy test thử **5 kiểu** khác nhau, không chỉ `undefined`.
+
+### How
+
+```js
+test('M6: rejects a non-string title with INVALID_TITLE', () => {
+  for (const bad of [undefined, null, 42, {}, ['x']]) {
+    assert.throws(() => validateTitle(bad), {
+      name: 'ValidationError',
+      code: 'INVALID_TITLE',
+    });
+  }
+});
+```
+
+```
+✖ M6: rejects a non-string title with INVALID_TITLE
+  +   name: 'TypeError'
+  -   name: 'ValidationError'
+  actual: TypeError: Cannot read properties of undefined (reading 'trim')
+ℹ tests 6 · pass 5 · fail 1
+```
+
+### Kết quả / Ghi chú
+
+- ✅ Đỏ đúng lý do – và khác các vòng trước: hàm **có** ném lỗi nhưng **sai loại** (`TypeError` thay vì `ValidationError`). `assert.throws` với `{ name, code }` phân biệt được điều này; nếu chỉ viết `assert.throws(() => validateTitle(bad))` (assertion yếu, Report §6.2) thì test đã **xanh** với code hiện tại vì bất kỳ lỗi nào cũng thỏa.
+- 5 test cũ vẫn xanh.

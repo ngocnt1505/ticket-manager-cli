@@ -32,3 +32,12 @@ test('M4: rejects a title of 101 characters with TITLE_TOO_LONG', () => {
     code: 'TITLE_TOO_LONG',
   });
 });
+
+test('M6: rejects a non-string title with INVALID_TITLE', () => {
+  for (const bad of [undefined, null, 42, {}, ['x']]) {
+    assert.throws(() => validateTitle(bad), {
+      name: 'ValidationError',
+      code: 'INVALID_TITLE',
+    });
+  }
+});
