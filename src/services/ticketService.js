@@ -28,4 +28,6 @@ function listTickets(tickets, filters) {
     .sort((a, b) => a.id - b.id);
 }
 
-module.exports = { createTicket, listTickets };
+function findTicket(tickets, id) {}
+
+module.exports = { createTicket, listTickets, findTicket };

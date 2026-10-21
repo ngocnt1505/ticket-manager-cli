@@ -1,7 +1,11 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 
-const { createTicket, listTickets } = require('../../src/services/ticketService');
+const {
+  createTicket,
+  listTickets,
+  findTicket,
+} = require('../../src/services/ticketService');
 const { buildTicket } = require('../../src/models/ticket');
 
 const NOW = new Date('2026-10-21T08:00:00.000Z');
@@ -107,4 +111,20 @@ test('S13: an invalid filter value is an error, not an empty result', () => {
     name: 'ValidationError',
     code: 'INVALID_PRIORITY',
   });
+});
+
+test('S14: finds a ticket by id', () => {
+  assert.equal(findTicket(seed(), 2)?.title, 'Dark mode');
+});
+
+test('S15: an unknown id fails with NOT_FOUND and names the id', () => {
+  assert.throws(
+    () => findTicket(seed(), 99),
+    (err) => {
+      assert.equal(err.name, 'NotFoundError');
+      assert.equal(err.code, 'NOT_FOUND');
+      assert.match(err.message, /99/);
+      return true;
+    },
+  );
 });

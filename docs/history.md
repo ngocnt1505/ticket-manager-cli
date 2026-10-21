@@ -1938,3 +1938,53 @@ function listTickets(tickets, filters) {
 - Refactor: không cần – mỗi bộ lọc một dòng `.filter`, đọc thẳng được.
 - Commit đề xuất: `feat(services): list tickets with filters`.
 - Tiếp theo: **vòng 8 – `findTicket` (S14–S15)** và lớp lỗi `NotFoundError`.
+
+> **Cập nhật Bước 35:** Ngọc commit và push `6ba75ff feat(services): list tickets with filters`. **Vòng 7 hoàn tất.**
+
+---
+
+## Bước 36 – Vòng 8 (`findTicket` – S14, S15): bước Red
+
+**Thời gian:** 2026-10-21 · **Người làm:** Claude viết test + stub (theo yêu cầu); Ngọc review và commit · **Commit:** chưa
+
+### What
+
+Thêm 2 test cho `findTicket(tickets, id)` và stub rỗng.
+
+### Why
+
+- **S15 yêu cầu lớp lỗi mới `NotFoundError`** (không dùng lại `ValidationError`): "không tìm thấy" là lỗi **dữ liệu** – phải đọc file mới biết – nên tầng CLI cần trả **exit 1**; còn `ValidationError` là lỗi **cách dùng** → exit 2 (`DECISIONS.md` §8). Hai lớp khác nhau thì CLI phân biệt được bằng `name`/`instanceof`.
+- **Thông báo phải có id** (`/99/`): người dùng chạy script với nhiều id cần biết id nào không tồn tại.
+- Test so `name` bằng chuỗi `'NotFoundError'` → chưa cần `require` lớp lỗi → không cần stub cho file lỗi.
+- Tên hàm `findTicket` (không phải `showTicket`): service chỉ **tìm**; việc **hiển thị** là của lệnh `show` ở tầng CLI.
+
+### How
+
+```js
+test('S14: finds a ticket by id', () => {
+  assert.equal(findTicket(seed(), 2)?.title, 'Dark mode');
+});
+
+test('S15: an unknown id fails with NOT_FOUND and names the id', () => {
+  assert.throws(
+    () => findTicket(seed(), 99),
+    (err) => {
+      assert.equal(err.name, 'NotFoundError');
+      assert.equal(err.code, 'NOT_FOUND');
+      assert.match(err.message, /99/);
+      return true;
+    },
+  );
+});
+```
+
+```
+✖ S14  AssertionError: Expected values to be strictly equal   (undefined ≠ 'Dark mode')
+✖ S15  AssertionError: Missing expected exception
+ℹ tests 44 · pass 42 · fail 2
+```
+
+### Kết quả / Ghi chú
+
+- ✅ Đỏ đúng lý do; 42 test cũ vẫn xanh.
+- Commit đề xuất: `test(services): add failing tests for finding a ticket`.
