@@ -1988,3 +1988,50 @@ test('S15: an unknown id fails with NOT_FOUND and names the id', () => {
 
 - ✅ Đỏ đúng lý do; 42 test cũ vẫn xanh.
 - Commit đề xuất: `test(services): add failing tests for finding a ticket`.
+
+> **Cập nhật Bước 36:** Ngọc commit `e64f81e test(services): add failing tests for finding a ticket`.
+
+---
+
+## Bước 37 – Vòng 8: bước Green (`NotFoundError`, `findTicket`)
+
+**Thời gian:** 2026-10-21 · **Người làm:** Claude viết code (theo yêu cầu); Ngọc review và commit · **Commit:** chưa
+
+### What
+
+- `src/errors.js`: thêm lớp `NotFoundError` (cùng khuôn với `ValidationError`).
+- `src/services/ticketService.js`: viết `findTicket`.
+- Đánh dấu `[x]` S14, S15.
+
+### How
+
+```js
+// src/errors.js
+class NotFoundError extends Error {
+  constructor(code, message) {
+    super(message);
+    this.name = 'NotFoundError';
+    this.code = code;
+  }
+}
+
+// src/services/ticketService.js
+function findTicket(tickets, id) {
+  const ticket = tickets.find((candidate) => candidate.id === id);
+  if (!ticket) throw new NotFoundError('NOT_FOUND', `Ticket #${id} not found`);
+  return ticket;
+}
+```
+
+```
+ℹ tests 44 · pass 44 · fail 0   (exit 0)
+```
+
+**Mutation thủ công:** thay `throw` bằng `return undefined` → ✖ S15. Khôi phục → 44/44.
+
+### Kết quả / Ghi chú
+
+- ✅ **Vòng 8 hoàn tất** sau commit này.
+- So sánh `candidate.id === id` (so sánh nghiêm ngặt): tầng CLI phải chuyển `"2"` (chuỗi từ dòng lệnh) thành số `2` trước khi gọi – sẽ có test cho id sai định dạng ở C10.
+- **Mùi code cho bước Refactor tiếp theo:** `ValidationError` và `NotFoundError` giống hệt nhau, chỉ khác `name` → gộp vào một lớp cha.
+- Commit đề xuất: `feat(services): find a ticket by id`.

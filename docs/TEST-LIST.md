@@ -82,8 +82,8 @@ Service nhận mảng tickets và trả về mảng **mới**; "không lưu" ở
 
 ### show
 
-- [ ] **S14** Tìm thấy ticket theo id *(W1)*
-- [ ] **S15** Id không tồn tại → lỗi `NOT_FOUND`, thông báo có id *(W1)*
+- [x] **S14** Tìm thấy ticket theo id *(W1)*
+- [x] **S15** Id không tồn tại → lỗi `NOT_FOUND`, thông báo có id *(W1)*
 
 ### update
 

@@ -6,4 +6,12 @@ class ValidationError extends Error {
   }
 }
 
-module.exports = { ValidationError };
+class NotFoundError extends Error {
+  constructor(code, message) {
+    super(message);
+    this.name = 'NotFoundError';
+    this.code = code;
+  }
+}
+
+module.exports = { ValidationError, NotFoundError };

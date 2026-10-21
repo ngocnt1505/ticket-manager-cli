@@ -4,6 +4,7 @@ const {
   validatePriority,
   normalizeTags,
 } = require('../models/ticket');
+const { NotFoundError } = require('../errors');
 
 // Services are pure functions over the list of tickets: they never touch files
 // and never modify the list they receive. The CLI loads, calls a service, then saves.
@@ -28,6 +29,10 @@ function listTickets(tickets, filters) {
     .sort((a, b) => a.id - b.id);
 }
 
-function findTicket(tickets, id) {}
+function findTicket(tickets, id) {
+  const ticket = tickets.find((candidate) => candidate.id === id);
+  if (!ticket) throw new NotFoundError('NOT_FOUND', `Ticket #${id} not found`);
+  return ticket;
+}
 
 module.exports = { createTicket, listTickets, findTicket };
