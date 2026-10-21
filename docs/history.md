@@ -2192,3 +2192,64 @@ function updateTicket(tickets, id, changes, now) {
 - Trong 4.2: 1 quyết định thiết kế (hàm thuần trên mảng), 1 lỗ hổng do mutation phát hiện và lấp (P2), 1 refactor (`TicketError`), 1 lần đo mutation sai được phát hiện và làm lại.
 - Commit đề xuất: `feat(services): update a ticket`.
 - Tiếp theo: **Giai đoạn 4.3 – Storage (D1–D12)**: lần đầu tiên đụng tới file thật.
+
+> **Cập nhật Bước 40:** Ngọc commit và push `dcc71cd feat(services): update a ticket`. **Giai đoạn 4.2 (Services) hoàn tất.**
+
+---
+
+## Bước 41 – Giai đoạn 4.3, vòng 10 (hàm thuần `parseTickets` / `serializeTickets` – D1–D6): bước Red
+
+**Thời gian:** 2026-10-21 · **Người làm:** Claude viết test + stub (theo yêu cầu); Ngọc review và commit · **Commit:** chưa
+
+### What
+
+Tạo `test/unit/jsonStore.test.js` (6 test) và `src/storage/jsonStore.js` (2 stub).
+
+### Why
+
+- **Chiến lược H + A từ tuần 1** (Report A.2): tách phần xử lý **chuỗi** thành hàm thuần (H) → mọi ca "file hỏng" thành unit test nhanh, không cần tạo file; phần đọc/ghi đĩa (A) chỉ còn vài integration test ở vòng sau.
+- **`parseTickets(text, filePath)` nhận cả đường dẫn** dù không đọc file: chỉ để đưa vào thông báo lỗi (D3) – người dùng phải biết **file nào** hỏng.
+- **D2 – file rỗng = không có ticket** (`DECISIONS.md` §7, Ngọc xác nhận).
+- **D4** thử 4 dạng JSON hợp lệ nhưng không phải mảng (`{}`, `null`, số, chuỗi) – Report Bảng 6.
+- **D5 so chuỗi chính xác** (thụt 2 dấu cách, có dòng mới cuối file – `DECISIONS.md` §7): file phải đọc/sửa được bằng mắt và có diff gọn trong git.
+- **D6 khứ hồi** (serialize → parse) với tiếng Việt và emoji: chứng minh không mất dữ liệu Unicode qua tầng lưu trữ.
+- Lớp lỗi mới dự kiến: `StorageError` (`CORRUPTED_FILE`) – lỗi dữ liệu → exit 1 ở CLI.
+
+### How
+
+```js
+test('D3: cut-off JSON fails with CORRUPTED_FILE and names the file', () => {
+  assert.throws(
+    () => parseTickets('[{"id":1,', 'data/tickets.json'),
+    (err) => {
+      assert.equal(err.name, 'StorageError');
+      assert.equal(err.code, 'CORRUPTED_FILE');
+      assert.match(err.message, /data\/tickets\.json/);
+      return true;
+    },
+  );
+});
+
+test('D5: serializeTickets writes JSON indented by 2 spaces, ending with a newline', () => {
+  assert.equal(serializeTickets([{ id: 1, tags: ['a'] }]),
+    '[\n  {\n    "id": 1,\n    "tags": [\n      "a"\n    ]\n  }\n]\n');
+});
+
+test('D6: Vietnamese text and emoji survive serialize then parse', () => {
+  const tickets = [{ id: 1, title: 'Sửa lỗi đăng nhập 😀', tags: ['giao diện'] }];
+  const text = serializeTickets(tickets);
+  assert.match(text ?? '', /Sửa lỗi đăng nhập 😀/);
+  assert.deepEqual(parseTickets(text ?? '', 'tickets.json'), tickets);
+});
+// D1, D2, D4 tương tự
+```
+
+```
+✖ D1 · ✖ D2 · ✖ D3 · ✖ D4 · ✖ D5 · ✖ D6   – cả 6 đều AssertionError
+ℹ tests 55 · pass 49 · fail 6
+```
+
+### Kết quả / Ghi chú
+
+- ✅ Đỏ đúng lý do; 49 test cũ vẫn xanh.
+- Commit đề xuất: `test(storage): add failing tests for parsing and serializing tickets`.
