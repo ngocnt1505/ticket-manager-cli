@@ -6,6 +6,7 @@ const {
   validateStatus,
   validatePriority,
   validateDescription,
+  normalizeTags,
 } = require('../../src/models/ticket');
 
 test('M1: trims a valid title', () => {
@@ -106,4 +107,35 @@ test('M14: rejects a non-string description with INVALID_DESCRIPTION', () => {
       code: 'INVALID_DESCRIPTION',
     });
   }
+});
+
+test('M15: splits tags on commas and trims each one', () => {
+  assert.deepEqual(normalizeTags('bug, ui'), ['bug', 'ui']);
+});
+
+test('M16: drops empty tags', () => {
+  assert.deepEqual(normalizeTags('bug,,ui,'), ['bug', 'ui']);
+});
+
+test('M17: lowercases tags and removes duplicates, keeping first-seen order', () => {
+  assert.deepEqual(normalizeTags('Bug,bug,UI'), ['bug', 'ui']);
+});
+
+test('M18: missing or blank tags become an empty list', () => {
+  for (const blank of [undefined, '', ' , ,']) {
+    assert.deepEqual(normalizeTags(blank), []);
+  }
+});
+
+test('M19: keeps Vietnamese tags', () => {
+  assert.deepEqual(normalizeTags('Giao diện'), ['giao diện']);
+});
+
+test('M20: accepts a 30-character tag and rejects 31 with INVALID_TAG', () => {
+  const max = 't'.repeat(30);
+  assert.deepEqual(normalizeTags(max), [max]);
+  assert.throws(() => normalizeTags('t'.repeat(31)), {
+    name: 'ValidationError',
+    code: 'INVALID_TAG',
+  });
 });

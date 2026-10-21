@@ -54,6 +54,8 @@ function validateDescription(description) {
   return clean;
 }
 
+function normalizeTags(tags) {}
+
 module.exports = {
   STATUSES,
   PRIORITIES,
@@ -61,4 +63,5 @@ module.exports = {
   validateStatus,
   validatePriority,
   validateDescription,
+  normalizeTags,
 };

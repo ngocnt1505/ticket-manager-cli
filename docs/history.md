@@ -1135,3 +1135,65 @@ function validateDescription(description) {
 - ✅ **Vòng 3 (M11–M14) hoàn tất** sau commit này. `TEST-LIST.md`: 14/77.
 - Commit đề xuất: `feat(models): validate description`.
 - Tiếp theo: **vòng 4 – tags (M15–M20)**.
+
+> **Cập nhật Bước 21:** Ngọc commit và push `a9ec61c feat(models): validate description`. **Vòng 3 (M11–M14) hoàn tất.**
+
+---
+
+## Bước 22 – Vòng 4 (tags – M15–M20): bước Red; ghi mục "Phát sinh" đầu tiên
+
+**Thời gian:** 2026-10-21 · **Người làm:** Claude viết test + stub (theo yêu cầu); Ngọc review và commit · **Commit:** chưa
+
+### What
+
+- Thêm 6 test M15–M20 cho hàm mới `normalizeTags`; thêm stub rỗng và export.
+- Thêm mục **P1** vào phần "Phát sinh" của `TEST-LIST.md`.
+
+### Why
+
+- Tên **`normalizeTags`** (không phải `validateTags`): hàm không chỉ kiểm tra mà còn **biến đổi** dữ liệu (tách chuỗi, chữ thường, bỏ trùng) – tên nói đúng việc nó làm.
+- Mỗi test ứng với **một** bước chuẩn hóa trong `DECISIONS.md` §4 (tách + trim / bỏ rỗng / chữ thường + bỏ trùng / rỗng → `[]` / tiếng Việt / giới hạn 30) → khi một bước sai, tên test đỏ chỉ ra ngay bước nào.
+- M17 kiểm tra cả **thứ tự**: `'Bug,bug,UI'` → `['bug', 'ui']` (giữ thứ tự xuất hiện đầu tiên), vì `deepEqual` so cả thứ tự.
+- M19: `toLowerCase()` phải xử lý đúng chữ có dấu (`'Giao diện'` → `'giao diện'`) và không tách khoảng trắng bên trong tag.
+- **P1 – áp dụng quy tắc "Phát sinh"** của Giai đoạn 3: trong lúc viết test nghĩ ra trường hợp tags không phải chuỗi. Không có trong test list → **ghi lại, không làm ngay**, để Ngọc quyết định.
+
+### How
+
+```js
+test('M15: splits tags on commas and trims each one', () => {
+  assert.deepEqual(normalizeTags('bug, ui'), ['bug', 'ui']);
+});
+test('M16: drops empty tags', () => {
+  assert.deepEqual(normalizeTags('bug,,ui,'), ['bug', 'ui']);
+});
+test('M17: lowercases tags and removes duplicates, keeping first-seen order', () => {
+  assert.deepEqual(normalizeTags('Bug,bug,UI'), ['bug', 'ui']);
+});
+test('M18: missing or blank tags become an empty list', () => {
+  for (const blank of [undefined, '', ' , ,']) {
+    assert.deepEqual(normalizeTags(blank), []);
+  }
+});
+test('M19: keeps Vietnamese tags', () => {
+  assert.deepEqual(normalizeTags('Giao diện'), ['giao diện']);
+});
+test('M20: accepts a 30-character tag and rejects 31 with INVALID_TAG', () => {
+  const max = 't'.repeat(30);
+  assert.deepEqual(normalizeTags(max), [max]);
+  assert.throws(() => normalizeTags('t'.repeat(31)), {
+    name: 'ValidationError',
+    code: 'INVALID_TAG',
+  });
+});
+```
+
+```
+✖ M15 · ✖ M16 · ✖ M17 · ✖ M18 · ✖ M19 · ✖ M20   – đều AssertionError
+ℹ tests 20 · pass 14 · fail 6
+```
+
+### Kết quả / Ghi chú
+
+- ✅ Đỏ đúng lý do; 14 test cũ vẫn xanh.
+- `TEST-LIST.md` có mục Phát sinh đầu tiên: **P1** (tags không phải chuỗi) – chờ Ngọc quyết định.
+- Commit đề xuất: `test(models): add failing tests for tags`.

@@ -147,4 +147,4 @@ Danh sách kịch bản cần test, viết **trước khi code** (Canon TDD, Rep
 
 Trường hợp nghĩ ra trong lúc làm – thêm vào đây trước, làm sau.
 
-- (chưa có)
+- [ ] **P1** Tags không phải chuỗi (`42`, `{}`) → lỗi `INVALID_TAG` thay vì `TypeError`. *(nghĩ ra ở vòng 4; cần Ngọc quyết định có làm không – CLI luôn truyền chuỗi, nhưng hàm tạo ticket có thể nhận dữ liệu khác)*
