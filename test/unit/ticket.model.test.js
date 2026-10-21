@@ -15,3 +15,10 @@ test('M2: rejects an empty or whitespace-only title with EMPTY_TITLE', () => {
     });
   }
 });
+
+test('M4: rejects a title of 101 characters with TITLE_TOO_LONG', () => {
+  assert.throws(() => validateTitle('a'.repeat(101)), {
+    name: 'ValidationError',
+    code: 'TITLE_TOO_LONG',
+  });
+});

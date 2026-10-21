@@ -28,7 +28,7 @@ Trước đó Claude đã tự làm trọn dự án trong một lượt (xem `do
 
 - tự viết test, tự chạy, tự commit từng bước Red → Green → Refactor;
 - tự chốt (hoặc hỏi mentor) các quyết định thiết kế;
-- có nhật ký AI thật (`AI-LOG.md`): hỏi gì, nhận gì, sửa gì, từ chối gì.
+- ghi rõ ai làm từng bước (dòng **Người làm**), để cuối dự án tổng kết được: AI làm gì, Ngọc quyết định gì, sửa gì, từ chối gì.
 
 ### How
 
@@ -85,7 +85,7 @@ exit=0
 - `package.json` hợp lệ, script chạy được.
 - ⚠️ **0 test mà vẫn exit 0 ("xanh").** Nghĩa là nếu sau này pattern gõ sai hoặc file test đặt sai thư mục, `npm test` vẫn báo thành công mà không chạy test nào – đúng kiểu "xanh giả" ở Week 1 (Report §5.3). Đây chính là lý do bước tiếp theo trong kế hoạch là **viết test giả `1 + 1 = 2`**: thấy `tests 1, pass 1` mới chắc pattern tìm đúng file.
 - `main: "index.js"` trỏ tới file không tồn tại; không ảnh hưởng CLI (CLI dùng `bin`). Có thể xóa hoặc đổi sau khi có `src/cli.js`.
-- Bước này do AI làm → nên ghi một dòng vào `docs/AI-LOG.md` khi tạo file đó.
+- Bước này do AI làm → đưa vào mục *Tổng kết làm việc với AI* cuối dự án.
 
 ---
 
@@ -224,7 +224,7 @@ Các điểm W1 lấy lại từ `docs/Report.md`: title (100 ký tự theo `.le
 
 ### Kết quả / Ghi chú
 
-- Ngọc chọn đúng cả 4 phương án Claude đánh dấu *Recommended*. Nên ghi vào `AI-LOG.md` là đã **đọc lý do và đồng ý**, hoặc ghi lý do riêng của mình nếu có.
+- Ngọc chọn đúng cả 4 phương án Claude đánh dấu *Recommended*. Khi tổng kết cần nói rõ là đã **đọc lý do và đồng ý**, hoặc nêu lý do riêng của mình nếu có.
 - Còn **7 mục *Đề xuất*** chưa được xác nhận: chữ hoa trong status/priority bị từ chối, description ≤ 1000, tag ≤ 30, update không có trường nào → lỗi, `--tags` thay thế toàn bộ, JSON thụt lề 2, file rỗng = danh sách rỗng.
 - Bước tiếp theo: Ngọc rà và xác nhận các mục Đề xuất → viết `docs/TEST-LIST.md` → commit `docs: add design decisions and test list`.
 
@@ -276,7 +276,7 @@ Các điểm W1 lấy lại từ `docs/Report.md`: title (100 ký tự theo `.le
 ### Kết quả / Ghi chú
 
 - `DECISIONS.md`: không còn mục nào ở trạng thái "đề xuất". Còn treo: có hỏi mentor về lọc tag (AND) và phạm vi `update` (5 trường) hay không.
-- Mục `--tags` là ví dụ cụ thể **không nhận nguyên đề xuất của AI**: Ngọc dừng lại ở mục này, yêu cầu xem các phương án rồi mới chọn → nên ghi vào `AI-LOG.md`.
+- Mục `--tags` là ví dụ cụ thể **không nhận nguyên đề xuất của AI**: Ngọc dừng lại ở mục này, yêu cầu xem các phương án rồi mới chọn → dùng làm ví dụ trong mục *Tổng kết làm việc với AI*.
 - Bước tiếp theo: Ngọc rà `TEST-LIST.md`, rồi tự commit:
   `git add docs/DECISIONS.md docs/TEST-LIST.md docs/history.md` → `git commit -m "docs: add design decisions and test list"` → `git push`.
 
@@ -420,7 +420,7 @@ module.exports = { validateTitle };
 ### Kết quả / Ghi chú
 
 - ✅ M1 xanh. `TEST-LIST.md`: 1/77.
-- Ghi vào `AI-LOG.md`: code Green do Claude viết; Ngọc cần đọc hiểu và giải thích được vì sao **chỉ** có `title.trim()`.
+- Code Green do Claude viết; Ngọc cần đọc hiểu và giải thích được vì sao **chỉ** có `title.trim()`.
 - Trục trặc nhỏ khi làm: lệnh đánh dấu `[x]` chạy trước khi code được ghi (lúc đó test còn đỏ); đã ghi code và chạy lại → xanh. Bài học: luôn chạy test **sau cùng** rồi mới đánh dấu.
 - Còn chờ Ngọc: sửa message commit Red (`--amend`) và commit Green.
 
@@ -532,4 +532,47 @@ module.exports = { validateTitle };
 - ✅ M2 xanh. `TEST-LIST.md`: 2/77.
 - Refactor: chưa cần (hàm 3 dòng, chưa có trùng lặp).
 - VS Code gợi ý *"File is a CommonJS module; it may be converted to an ES module"* – chỉ là gợi ý (Hint), không phải lỗi. Dự án đã chọn CommonJS (`"type": "commonjs"` trong `package.json`), giữ nguyên.
-- Ghi `AI-LOG.md`: `ticket.js` vòng này do Claude sửa.
+- `ticket.js` vòng này do Claude sửa.
+
+> **Cập nhật Bước 10:** Ngọc commit Green và push: `8b2baa9 feat(models): reject empty title` (message lại có dấu cách ở đầu; đã push nên giữ nguyên, không sửa lịch sử). **Vòng TDD M2 hoàn tất.**
+
+---
+
+## Bước 11 – Vòng TDD M4 (title 101 ký tự → `TITLE_TOO_LONG`): bước Red
+
+**Thời gian:** 2026-10-21 · **Người làm:** Claude viết test (theo yêu cầu); Ngọc review và commit · **Commit:** chưa
+
+### What
+
+Thêm test M4: title dài 101 ký tự phải ném `ValidationError` với `code: 'TITLE_TOO_LONG'`.
+
+### Why
+
+- **Làm M4 trước M3** (dù M3 đứng trước trong `TEST-LIST.md`): test "đúng 100 ký tự hợp lệ" (M3) **không thể đỏ** khi code chưa có giới hạn nào → không có bước Red cho nó. M4 tạo ra giới hạn (Red → Green); sau đó M3 và M5 đóng vai **test canh biên**, sẽ được kiểm chứng bằng mutation.
+- Dùng `'a'.repeat(101)` thay vì gõ tay: chắc chắn đúng 101 ký tự, người đọc test thấy ngay con số.
+- Không cần `for` như M2 vì chỉ có một giá trị cần thử; không cần stub vì test so `name` bằng chuỗi.
+
+### How
+
+```js
+test('M4: rejects a title of 101 characters with TITLE_TOO_LONG', () => {
+  assert.throws(() => validateTitle('a'.repeat(101)), {
+    name: 'ValidationError',
+    code: 'TITLE_TOO_LONG',
+  });
+});
+```
+
+```
+✔ M1: trims a valid title
+✔ M2: rejects an empty or whitespace-only title with EMPTY_TITLE
+✖ M4: rejects a title of 101 characters with TITLE_TOO_LONG
+  AssertionError [ERR_ASSERTION]: Missing expected exception (ValidationError).
+ℹ tests 3 · pass 2 · fail 1
+```
+
+### Kết quả / Ghi chú
+
+- ✅ Đỏ đúng lý do: code chưa có giới hạn độ dài nên trả về title bình thường, không ném lỗi.
+- M1, M2 vẫn xanh.
+- Kèm theo: các dòng nhắc `AI-LOG.md` ở Bước 0, 1, 4, 5, 8, 10 được đổi thành "mục *Tổng kết làm việc với AI* cuối dự án", theo quyết định không dùng `AI-LOG.md`.
