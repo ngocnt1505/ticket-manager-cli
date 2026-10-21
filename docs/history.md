@@ -1709,3 +1709,58 @@ test('S4: invalid input throws and leaves the given list unchanged', () => {
 
 - ✅ Đỏ đúng lý do; 28 test models vẫn xanh.
 - Commit đề xuất: `test(services): add failing tests for creating a ticket`.
+
+> **Cập nhật Bước 30–31:** Ngọc commit 2 commit riêng theo đúng thứ tự: `f218813 docs: choose pure array functions for services` (chỉ `DECISIONS.md`, `TEST-LIST.md`) → `99308a4 test(services): add failing tests for creating a ticket`.
+
+---
+
+## Bước 32 – Vòng 6: bước Green (`createTicket`); mutation phát hiện lỗ hổng → P2
+
+**Thời gian:** 2026-10-21 · **Người làm:** Claude viết code (theo yêu cầu); Ngọc review và commit · **Commit:** chưa
+
+### What
+
+- Viết `createTicket` trong `src/services/ticketService.js`; đánh dấu `[x]` S1–S4.
+- Mutation testing phát hiện một lỗ hổng trong bộ test → ghi thành mục Phát sinh **P2**.
+
+### Why
+
+- `Math.max(0, ...ids) + 1`: số `0` để mảng rỗng cho ra id 1 (`Math.max()` không đối số trả `-Infinity`).
+- Lấy **id lớn nhất**, không phải `tickets.length`: có lỗ hổng id (ví dụ sau này cho xóa ticket) thì `length + 1` sẽ trùng id đã có.
+- `[...tickets, ticket]` tạo **mảng mới** – đúng cam kết §9 "không sửa mảng đầu vào".
+- Gọi `buildTicket` của model → toàn bộ validate và mặc định dùng lại từ 4.1.
+
+### How
+
+```js
+const { buildTicket } = require('../models/ticket');
+
+// Services are pure functions over the list of tickets: they never touch files
+// and never modify the list they receive. The CLI loads, calls a service, then saves.
+
+function createTicket(tickets, input, now) {
+  const id = Math.max(0, ...tickets.map((ticket) => ticket.id)) + 1;
+  const ticket = buildTicket(input, { id, now });
+  return { tickets: [...tickets, ticket], ticket };
+}
+```
+
+```
+ℹ tests 32 · pass 32 · fail 0   (exit 0)
+```
+
+**Mutation thủ công:**
+
+| Mutation | Kết quả |
+|---|---|
+| `tickets.length + 1` thay vì id lớn nhất + 1 | ✖ S2 – bắt được |
+| Bỏ số `0` trong `Math.max(0, …)` | ✖ S1, S3 – bắt được (mảng rỗng → `-Infinity + 1`) |
+| `tickets.push(ticket)` – **sửa mảng gốc** khi tạo thành công | ✔ 32/32 vẫn xanh – **KHÔNG bắt được** |
+
+**Một lần đo sai được phát hiện và làm lại:** lần chạy đầu của mutation `push`, chuỗi thay thế chứa `\n` dạng ký tự thường → file service **lỗi cú pháp** → cả file test đỏ ở cấp *file*, mà bộ lọc kết quả chỉ tìm dòng `✖ S…` nên trông như "không có test nào đỏ". Chạy lại với code mutation đúng cú pháp (in ra để kiểm tra) → vẫn `pass 32 · fail 0` → lỗ hổng là **thật**. Bài học: khi một mutation "không bị bắt", phải kiểm tra lại chính mutation đó trước khi kết luận.
+
+### Kết quả / Ghi chú
+
+- ✅ S1–S4 xanh. `TEST-LIST.md`: 32 mục `[x]`.
+- ⚠️ **P2**: S4 chỉ kiểm tra "mảng đầu vào không đổi" khi **lỗi**; khi **thành công** thì chưa có test → mutation `push` lọt. Ghi vào Phát sinh, chờ Ngọc quyết định.
+- Commit đề xuất: `feat(services): create a ticket with the next id`.

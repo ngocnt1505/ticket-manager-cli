@@ -63,10 +63,10 @@ Service nhận mảng tickets và trả về mảng **mới**; "không lưu" ở
 
 ### create
 
-- [ ] **S1** Ticket đầu tiên có id 1; kết quả gồm ticket mới và mảng mới chứa nó *(W1)*
-- [ ] **S2** Id mới = id lớn nhất + 1, kể cả khi có lỗ hổng (`[2, 9, 4]` → `10`) *(W1)*
-- [ ] **S3** Tạo liên tiếp trên mảng vừa trả về → id 1, 2 (id tính từ dữ liệu, không có bộ đếm riêng → vẫn đúng sau khi chạy lại chương trình) *(W1)*
-- [ ] **S4** Input sai → báo lỗi, mảng đầu vào không đổi *(W1)*
+- [x] **S1** Ticket đầu tiên có id 1; kết quả gồm ticket mới và mảng mới chứa nó *(W1)*
+- [x] **S2** Id mới = id lớn nhất + 1, kể cả khi có lỗ hổng (`[2, 9, 4]` → `10`) *(W1)*
+- [x] **S3** Tạo liên tiếp trên mảng vừa trả về → id 1, 2 (id tính từ dữ liệu, không có bộ đếm riêng → vẫn đúng sau khi chạy lại chương trình) *(W1)*
+- [x] **S4** Input sai → báo lỗi, mảng đầu vào không đổi *(W1)*
 
 ### list
 
@@ -150,3 +150,4 @@ Service nhận mảng tickets và trả về mảng **mới**; "không lưu" ở
 Trường hợp nghĩ ra trong lúc làm – thêm vào đây trước, làm sau.
 
 - [x] **P1** Tags không phải chuỗi (`null`, `42`, `{}`, `['bug']`) → lỗi `INVALID_TAG` thay vì `TypeError`. *(nghĩ ra ở vòng 4; Ngọc quyết định **làm** – để mọi dữ liệu sai đều ra lỗi có `code`, nhất quán với title/description)*
+- [ ] **P2** `createTicket` thành công **không sửa mảng đầu vào** (trả mảng mới) – theo `DECISIONS.md` §9. *(phát hiện ở vòng 6 bằng mutation: đổi thành `tickets.push(ticket)` mà 32/32 vẫn xanh; chờ Ngọc quyết định)*
