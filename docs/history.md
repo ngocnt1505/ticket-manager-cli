@@ -3478,3 +3478,50 @@ So sánh 3 cách gọi trong PowerShell (Claude chạy lại để chứng minh)
 - ✅ Giai đoạn 5 xong, chờ Ngọc review.
 - Commit đề xuất: `docs: add README with installation, configuration and usage`.
 - Tiếp theo: **Giai đoạn 6 – kiểm tra trước khi nộp** (`TEST-RESULTS.md`, coverage, tổng hợp mutation, clone sạch làm theo README, đối chiếu 7 Acceptance Criteria, kiểm tra `git log`).
+
+> **Cập nhật Bước 61:** Ngọc commit và push `87aa755 docs: add README with installation, configuration and usage`. **Giai đoạn 5 hoàn tất.**
+
+---
+
+## Bước 62 – Giai đoạn 6: kiểm tra trước khi nộp, viết `docs/TEST-RESULTS.md`
+
+**Thời gian:** 2026-10-21 · **Người làm:** Claude chạy kiểm tra và soạn (theo yêu cầu); Ngọc review và commit · **Commit:** chưa
+
+### What
+
+Thực hiện đủ 6 mục kiểm tra của kế hoạch Giai đoạn 6 và ghi kết quả vào `docs/TEST-RESULTS.md`:
+
+| Mục kế hoạch | Kết quả |
+|---|---|
+| `npm test` xanh hết, lưu output vào `TEST-RESULTS.md` | 84/84 pass (68 unit · 16 integration), output đầy đủ ở mục 2 |
+| `npm run coverage`, xem dòng nào chưa có test | 100 % dòng · 99,31 % nhánh; **1 nhánh** chưa chạy (`update.js`, in tags) |
+| Cố ý làm hỏng 3–5 chỗ, ghi kết quả | Làm **10** chỗ, mỗi tầng ít nhất một → **9/10 bị bắt** |
+| Clone repo ra thư mục mới, làm đúng theo README | Chạy đúng (58 commit, 84/84, các lệnh ra đúng output); `tickets.json` được `.gitignore` bỏ qua |
+| Đối chiếu 7 Acceptance Criteria | 7/7 ✅, mỗi tiêu chí có bằng chứng (mục 7) |
+| `git log --oneline`, kiểm tra chuỗi `test:` → `feat:` → `refactor:` | 26 `test` · 22 `feat` · 1 `fix` · 4 `refactor` · 4 `docs` (mục 8) |
+
+### Why
+
+- Tuần 1 bị nhắc: kết quả phải **kiểm chứng được** – nên `TEST-RESULTS.md` chứa output thật, kèm commit, phiên bản Node, ngày chạy, lệnh tái hiện.
+- **Mutation trải đều các tầng** (model, service, storage, cli, commands, bin) thay vì chỉ một chỗ: chứng minh mỗi tầng đều có test canh.
+- **Clone sạch** bắt được những lỗi mà thư mục làm việc che mất: file quên commit, phụ thuộc vào file chỉ có trên máy mình.
+- Không chạy `npm link` trên bản clone: sẽ ghi đè lệnh `tickets` đang link tới repo làm việc của Ngọc; `npm link` đã được kiểm tra ở Bước 60.
+
+### How – hai lỗ hổng phát hiện
+
+1. **Mutation #2 không bị bắt** – bỏ `validateStatus` trong `buildTicket`, 84/84 vẫn xanh. Kiểm tra:
+   - code thật vẫn đúng: `tickets create --title x --status closed` → `Error: Invalid status "closed". …` (exit 2), không tạo file;
+   - tìm trong test: status sai chỉ được thử ở `update` (C8, S20) và `list` (C8, S13); ở `create` chỉ thử **priority** sai (M22).
+   → **Test thiếu**, ghi thành **P7**.
+2. **Coverage**: nhánh in tags trong dòng xác nhận của `update` chưa được chạy bởi test nào → ghi thành **P8**.
+
+**Hai lần làm sai trong lúc kiểm tra, đã sửa:**
+
+- Python trên Windows không hiểu đường dẫn `/tmp` của Git Bash → đổi sang đường dẫn Windows (`cygpath -w`).
+- Trong bản nháp `TEST-RESULTS.md` có câu "khoảng 40 mutation khác" – con số **ước lượng, chưa đếm** → sửa thành câu không có số. Tài liệu kiểm chứng không được chứa số liệu chưa kiểm chứng.
+
+### Kết quả / Ghi chú
+
+- ✅ `docs/TEST-RESULTS.md` (237 dòng) – 8 mục: tóm tắt, output `npm test`, coverage, mutation, lỗ hổng, clone sạch, Acceptance Criteria, lịch sử commit.
+- `TEST-LIST.md` thêm **P7**, **P8** (chờ Ngọc quyết định).
+- Commit đề xuất: `docs: add test results and pre-submission checks`.
