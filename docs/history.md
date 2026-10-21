@@ -2657,3 +2657,77 @@ StorageError READ_FAILED | Cannot read ticket file C:\Users\PC\AppData\Local\Tem
 - Commit đề xuất (2 commit):
   1. `feat(storage): report read errors and clean up the temp file` – `src/`, `docs/TEST-LIST.md`
   2. `test(storage): ensure save never deletes what it did not create` – `test/`, `docs/history.md`
+
+> **Cập nhật Bước 48:** Ngọc commit 2 commit: `e944326 feat(storage): report read errors and clean up the temp file` → `b2cf0c3 test(storage): ensure save never deletes what it did not create`. **Giai đoạn 4.3 (Storage) hoàn tất.**
+
+---
+
+## Bước 49 – Giai đoạn 4.4, vòng 12 (`create`, `list` qua CLI – C1–C4): bước Red
+
+**Thời gian:** 2026-10-21 · **Người làm:** Claude viết test + stub (theo yêu cầu); Ngọc review và commit · **Commit:** chưa
+
+### What
+
+- Chia 4.4 thành 4 vòng: **12** create/list (C1–C4) · **13** show, not found, id sai (C5, C9, C10) · **14** update, lỗi validation (C6–C8) · **15** `bin/tickets.js` + chạy CLI thật bằng `spawnSync` (C11–C18), rồi `npm link`.
+- Tạo `test/unit/cli.test.js` (4 test) và `src/cli.js` (stub `run`).
+
+### Why – thiết kế của `run(argv, io)`
+
+- **`run` trả về exit code**, không tự gọi `process.exit`, không tự in ra `console` → test gọi thẳng `run([...])` trong cùng tiến trình, nhanh, kiểm tra được exit code / stdout / stderr riêng biệt (đúng kế hoạch: "unit test cho lớp commands với stdout/stderr giả").
+- Mọi thứ bên ngoài được **truyền vào qua `io`**: `stdout`, `stderr` (hàm nhận một dòng), `now`, `store` (`load()` / `save()`).
+- **`store` giả trong bộ nhớ** ở unit test: copy dữ liệu vào/ra như file thật (`structuredClone`) và **đếm số lần `save`** → C2 kiểm tra được "không ghi gì". Phần nối với file thật (`jsonStore`) và `process.stdout` để cho `bin/tickets.js` ở vòng 15 – được test bằng `spawnSync` với file thật.
+- Kiểm tra **chính xác** stdout (`'Created ticket #1: Fix login'`, `'No tickets found.'`) vì đó là thứ người dùng và script đọc; C4 dùng regex có khoảng trắng linh hoạt (`\s+`) để không phụ thuộc số dấu cách căn cột.
+
+### How
+
+```js
+function cli(initial = []) {
+  const store = {
+    tickets: initial,
+    saves: 0,
+    load() { return structuredClone(this.tickets); },
+    save(tickets) { this.saves += 1; this.tickets = structuredClone(tickets); },
+  };
+  const exec = (...argv) => {
+    const out = [];
+    const err = [];
+    const code = run(argv, {
+      store, now: () => NOW,
+      stdout: (line) => out.push(line),
+      stderr: (line) => err.push(line),
+    });
+    return { code, stdout: out.join('\n'), stderr: err.join('\n') };
+  };
+  return { exec, store };
+}
+
+test('C2: create without --title explains it on stderr, exits 2 and saves nothing', () => {
+  const { exec, store } = cli();
+  const r = exec('create');
+  assert.equal(r.code, 2);
+  assert.equal(r.stdout, '');
+  assert.match(r.stderr, /--title/);
+  assert.equal(store.saves, 0);
+});
+
+test('C4: list prints one line per ticket with id, status, priority, title and tags', () => {
+  const { exec } = cli();
+  exec('create', '--title', 'Login bug', '--priority', 'high', '--tags', 'bug,auth');
+  exec('create', '--title', 'Docs');
+  const lines = exec('list').stdout.split('\n');
+  assert.match(lines[0], /^#1\s+open\s+high\s+Login bug\s+\[bug, auth\]$/);
+  assert.match(lines[1], /^#2\s+open\s+medium\s+Docs$/);
+});
+// C1, C3: xem file test
+```
+
+```
+✖ C1 · ✖ C2 · ✖ C3 · ✖ C4   – cả 4 đều AssertionError (exit code undefined)
+ℹ tests 68 · pass 64 · fail 4
+```
+
+### Kết quả / Ghi chú
+
+- ✅ Đỏ đúng lý do; 64 test cũ vẫn xanh.
+- C2 đòi thông báo nhắc tới `--title` (tên option người dùng gõ), không phải câu kỹ thuật `Title must be text` của model.
+- Commit đề xuất: `test(cli): add failing tests for create and list commands`.
