@@ -57,6 +57,9 @@ function validateDescription(description) {
 
 function normalizeTags(tags) {
   if (tags === undefined) return [];
+  if (typeof tags !== 'string') {
+    throw new ValidationError('INVALID_TAG', 'Tags must be text, separated by commas');
+  }
   const clean = tags
     .split(',')
     .map((tag) => tag.trim().toLowerCase())

@@ -1307,3 +1307,47 @@ test('P1: rejects non-string tags with INVALID_TAG', () => {
 
 - ✅ Đỏ đúng lý do (cùng kiểu với M6: có lỗi nhưng sai loại). 20 test cũ vẫn xanh.
 - Commit đề xuất: `test(models): add failing test for non-string tags`.
+
+> **Cập nhật Bước 24:** Ngọc commit `f6c7718 test(models): add failing test for non-string tags`.
+
+---
+
+## Bước 25 – P1: bước Green (kiểm tra kiểu cho tags)
+
+**Thời gian:** 2026-10-21 · **Người làm:** Claude viết code (theo yêu cầu); Ngọc review và commit · **Commit:** chưa
+
+### What
+
+Thêm kiểm tra `typeof tags !== 'string'` vào `normalizeTags`, ngay sau dòng xử lý `undefined`; đánh dấu `[x] P1`.
+
+### Why
+
+- Đặt **sau** `if (tags === undefined) return [];`: `undefined` là "không nhập" (hợp lệ, → `[]`); mọi kiểu khác chuỗi là "nhập sai" → lỗi. Cùng thứ tự với `validateDescription`.
+- Đặt **trước** `.split(',')`: chính lời gọi `.split` trên `null`/`42` sinh ra `TypeError`.
+
+### How
+
+```js
+function normalizeTags(tags) {
+  if (tags === undefined) return [];
+  if (typeof tags !== 'string') {
+    throw new ValidationError('INVALID_TAG', 'Tags must be text, separated by commas');
+  }
+  const clean = tags
+    .split(',')
+    ...
+```
+
+```
+ℹ tests 21 · pass 21 · fail 0   (exit 0)
+```
+
+**Mutation thủ công:** chỉ chặn `null` (`if (tags === null)`) → ✖ P1, vì `42`, `{}`, `['bug']` vẫn lọt tới `.split`. Khôi phục → 21/21. Xác nhận lý do test thử **4 kiểu**, không chỉ `null`.
+
+### Kết quả / Ghi chú
+
+- ✅ P1 hoàn tất – mục Phát sinh đầu tiên đi trọn quy trình: **nghĩ ra → ghi lại → người quyết định đồng ý → Red → Green**.
+- Giờ **mọi** hàm validate (title, status, priority, description, tags) đều trả lỗi `ValidationError` có `code` cho dữ liệu sai, không còn `TypeError`.
+- `TEST-LIST.md`: 21 mục `[x]` (M1–M20 + P1).
+- Commit đề xuất: `feat(models): reject non-string tags`.
+- Tiếp theo: **vòng 5 – tạo và cập nhật ticket (M21–M27)**, vòng cuối của 4.1.

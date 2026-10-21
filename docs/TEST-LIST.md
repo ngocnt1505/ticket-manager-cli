@@ -147,4 +147,4 @@ Danh sách kịch bản cần test, viết **trước khi code** (Canon TDD, Rep
 
 Trường hợp nghĩ ra trong lúc làm – thêm vào đây trước, làm sau.
 
-- [ ] **P1** Tags không phải chuỗi (`null`, `42`, `{}`, `['bug']`) → lỗi `INVALID_TAG` thay vì `TypeError`. *(nghĩ ra ở vòng 4; Ngọc quyết định **làm** – để mọi dữ liệu sai đều ra lỗi có `code`, nhất quán với title/description)*
+- [x] **P1** Tags không phải chuỗi (`null`, `42`, `{}`, `['bug']`) → lỗi `INVALID_TAG` thay vì `TypeError`. *(nghĩ ra ở vòng 4; Ngọc quyết định **làm** – để mọi dữ liệu sai đều ra lỗi có `code`, nhất quán với title/description)*
