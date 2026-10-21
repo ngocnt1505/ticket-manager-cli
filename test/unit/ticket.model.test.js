@@ -139,3 +139,12 @@ test('M20: accepts a 30-character tag and rejects 31 with INVALID_TAG', () => {
     code: 'INVALID_TAG',
   });
 });
+
+test('P1: rejects non-string tags with INVALID_TAG', () => {
+  for (const bad of [null, 42, {}, ['bug']]) {
+    assert.throws(() => normalizeTags(bad), {
+      name: 'ValidationError',
+      code: 'INVALID_TAG',
+    });
+  }
+});

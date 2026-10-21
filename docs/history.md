@@ -1262,3 +1262,48 @@ function normalizeTags(tags) {
 - Refactor: không cần – hàm ngắn, mỗi bước một dòng.
 - Commit đề xuất: `feat(models): normalize tags`.
 - Tiếp theo: **vòng 5 – tạo và cập nhật ticket (M21–M27)**, vòng cuối của 4.1. Trước vòng này cần quyết định **P1**.
+
+> **Cập nhật Bước 23:** Ngọc commit và push `ad7521e feat(models): normalize tags`. **Vòng 4 (M15–M20) hoàn tất.**
+
+---
+
+## Bước 24 – P1 (tags không phải chuỗi → `INVALID_TAG`): Ngọc quyết định làm; bước Red
+
+**Thời gian:** 2026-10-21 · **Người làm:** Ngọc quyết định; Claude viết test (theo yêu cầu); Ngọc review và commit · **Commit:** chưa
+
+### What
+
+- Ngọc chọn **làm** mục Phát sinh P1 (thay vì bỏ và ghi vào giới hạn đã biết).
+- Thêm test P1: `normalizeTags` nhận `null`, `42`, `{}`, `['bug']` phải ném `ValidationError` với `code: 'INVALID_TAG'`.
+
+### Why
+
+- **Nhất quán:** title (M6) và description (M14) đã từ chối dữ liệu sai kiểu bằng lỗi có `code`; tags là trường duy nhất còn ném `TypeError`. Vòng 5 (tạo/cập nhật ticket) sẽ gọi `normalizeTags` – nếu không làm P1, một input sai kiểu sẽ lộ ra như bug thay vì lỗi validation.
+- **`['bug']` cũng bị từ chối:** `DECISIONS.md` §4 chốt tags được nhập bằng **một chuỗi** cách nhau bởi dấu phẩy; nhận thêm mảng là mở rộng hợp đồng chưa được quyết định.
+- **Quy trình đúng quy tắc Giai đoạn 3:** P1 được ghi vào "Phát sinh" khi nghĩ ra (Bước 22), làm **sau** khi xong vòng đang dở (vòng 4) và sau khi người quyết định đồng ý.
+
+### How
+
+```js
+test('P1: rejects non-string tags with INVALID_TAG', () => {
+  for (const bad of [null, 42, {}, ['bug']]) {
+    assert.throws(() => normalizeTags(bad), {
+      name: 'ValidationError',
+      code: 'INVALID_TAG',
+    });
+  }
+});
+```
+
+```
+✖ P1: rejects non-string tags with INVALID_TAG
+  +   name: 'TypeError'
+  -   name: 'ValidationError'
+  actual: TypeError: Cannot read properties of null (reading 'split')
+ℹ tests 21 · pass 20 · fail 1
+```
+
+### Kết quả / Ghi chú
+
+- ✅ Đỏ đúng lý do (cùng kiểu với M6: có lỗi nhưng sai loại). 20 test cũ vẫn xanh.
+- Commit đề xuất: `test(models): add failing test for non-string tags`.
