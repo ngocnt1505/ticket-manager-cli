@@ -3373,3 +3373,69 @@ Error: Unknown command "toString". Available commands: create, list, show, updat
 - ✅ **Phần code hoàn tất:** toàn bộ 77 mục test list + **6 mục Phát sinh** (P1–P6), **84 test xanh**.
 - Commit đề xuất: `fix(cli): treat built-in names as unknown commands and hide stack traces`.
 - Tiếp theo (kế hoạch 4.4, mục cuối): **chạy thử bằng tay với `npm link`** – Ngọc tự làm.
+
+> **Cập nhật Bước 59:** Ngọc commit và push `fix(cli): treat built-in names as unknown commands and hide stack traces`. **Phần code hoàn tất.**
+
+---
+
+## Bước 60 – Chạy thử bằng tay với `npm link`: phát hiện vấn đề `--tags bug,ui` trong PowerShell
+
+**Thời gian:** 2026-10-21 · **Người làm:** Ngọc chạy `npm link` và các lệnh; Claude phân tích kết quả · **Commit:** chưa
+
+### What
+
+Ngọc cài lệnh `tickets` bằng `npm link` và chạy thử trong một thư mục riêng (`%TEMP%\tickets-try`, để không tạo `tickets.json` trong repo):
+
+```
+PS> npm link
+added 1 package, and audited 3 packages in 12s
+PS> tickets create --title "Test"
+Created ticket #1: Test
+PS> tickets create --title "Sửa lỗi đăng nhập" --priority high --tags bug,ui
+Created ticket #2: Sửa lỗi đăng nhập
+PS> tickets list
+#1  open         medium  Test
+#2  open         high    Sửa lỗi đăng nhập  [bug ui]        ← chỉ 1 tag "bug ui"
+PS> tickets update 1 --status done
+Updated ticket #1 (status: done)
+PS> tickets show 1
+Ticket #1
+  Title:       Test
+  Status:      done
+  …
+  Created:     2026-10-21T10:48:26.311Z
+  Updated:     2026-10-21T10:48:26.582Z      ← updatedAt mới, createdAt giữ nguyên
+PS> tickets show 99
+Error: Ticket #99 not found
+PS> tickets delete 1
+Error: Unknown command "delete". Available commands: create, list, show, update
+```
+
+### Why
+
+Kế hoạch 4.4: test tự động chạy `node bin/tickets.js` trực tiếp – **không đi qua** cách người dùng thật gọi lệnh (`npm link` → lệnh `tickets` trên PATH → trên Windows là các file "shim" `tickets.ps1` / `tickets.cmd` do npm tạo). Chạy tay kiểm tra đúng con đường đó.
+
+### How – phân tích `[bug ui]`
+
+File dữ liệu xác nhận: `"tags": ["bug ui"]` – **một** tag chứa dấu cách.
+
+So sánh 3 cách gọi trong PowerShell (Claude chạy lại để chứng minh):
+
+| Cách gõ | Kết quả lưu |
+|---|---|
+| `tickets … --tags bug,ui` | `[bug ui]` ✖ |
+| `tickets … --tags "bug,ui"` | `[bug] [ui]` ✔ |
+| `tickets.cmd … --tags bug,ui` | `[bug] [ui]` ✔ |
+
+**Nguyên nhân:** trong PowerShell, `bug,ui` không có nháy là **cú pháp mảng** (2 phần tử). Gõ `tickets` thì PowerShell chạy `tickets.ps1` (shim của npm), shim chuyển tham số cho Node bằng `$args` → mảng bị **nối bằng dấu cách** thành `"bug ui"`. Chương trình không bao giờ thấy dấu phẩy.
+
+**Không sửa được từ phía code:** dấu phẩy đã mất trước khi tới Node; tách tag theo dấu cách thì phá vỡ tag có dấu cách như `giao diện` (M19, `DECISIONS.md` §4).
+
+→ Xử lý bằng **tài liệu**: README hướng dẫn đặt giá trị trong nháy khi dùng PowerShell (`--tags "bug,ui"`) và ghi vào mục giới hạn đã biết.
+
+### Kết quả / Ghi chú
+
+- ✅ Mọi lệnh hoạt động đúng qua `npm link`; exit code đúng; tiếng Việt hiển thị đúng; thông báo lỗi gọn, không stack trace.
+- ⚠️ Phát hiện **vấn đề môi trường** chỉ chạy tay mới thấy: test tự động gọi Node trực tiếp nên không đi qua shim PowerShell. Bài học: test tự động chứng minh chương trình đúng **với input nó nhận được**; chạy tay cho thấy input **thật** người dùng gửi tới có thể khác.
+- Việc cho Giai đoạn 5 (README): ví dụ PowerShell luôn đặt `--tags` trong nháy; thêm vào "Giới hạn đã biết".
+- Gỡ lệnh khi không cần: `npm unlink -g ticket-manager-cli`.
