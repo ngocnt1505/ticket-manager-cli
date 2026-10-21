@@ -339,3 +339,87 @@ Error: Cannot find module '../../src/models/ticket'
 - Dấu hiệu nhận biết về sau: dòng ✔/✖ chỉ có **tên file** = file không có test nào được đăng ký (file rỗng, chưa lưu, hoặc quên gọi `test()`).
 - Phòng tránh: bật **File → Auto Save** trong VS Code, hoặc luôn `Ctrl+S` trước khi chạy test.
 - Hiện trạng: test đỏ vì `Cannot find module` – **chưa phải đỏ đúng lý do**. Việc tiếp theo: thêm stub `src/models/ticket.js`.
+
+---
+
+## Bước 7 – Vòng TDD M1: hoàn tất bước Red (stub → đỏ đúng lý do)
+
+**Thời gian:** 2026-10-21 · **Người làm:** Ngọc · **Commit:** `63e3776` (chưa push)
+
+### What
+
+Thêm stub `src/models/ticket.js` (hàm `validateTitle` rỗng), chạy lại test, commit bước Red gồm test + stub.
+
+### Why
+
+Lỗi `Cannot find module` ở Bước 6 chỉ chứng minh "chưa có file", không chứng minh assertion hoạt động – một assertion viết sai cũng cho ra đúng lỗi đó (Report §2.3). Stub rỗng khiến test chạy tới assertion và đỏ **vì sai kết quả** → đỏ đúng lý do. Stub là một phần của bước Red vì nó chưa có hành vi gì.
+
+### How
+
+```js
+// src/models/ticket.js
+function validateTitle(title) {}
+
+module.exports = { validateTitle };
+```
+
+```
+✖ M1: trims a valid title
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  actual: undefined
+  expected: 'Fix login'
+ℹ tests 1 · pass 0 · fail 1
+```
+
+So với Bước 6: dòng ✖ giờ hiện **tên test** (không còn là tên file) → test đã thực sự được đăng ký và chạy.
+
+### Kết quả / Ghi chú
+
+- ✅ Red đúng lý do. Commit chứa `test/unit/ticket.model.test.js`, `src/models/ticket.js`, `docs/history.md`.
+- ⚠️ Commit message thực tế: `" test(models) : add failing test for strimming title"` – ba điểm lệch quy ước:
+  1. dấu cách ở **đầu** message (lần thứ 3 lặp lại);
+  2. dấu cách **trước dấu hai chấm** (`test(models) :`) – chuẩn Conventional Commits là `type(scope): subject`, nhiều công cụ đọc commit sẽ không nhận ra;
+  3. lỗi chính tả `strimming` → `trimming`.
+  Commit **chưa push** nên sửa an toàn bằng `git commit --amend`.
+
+---
+
+## Bước 8 – Vòng TDD M1: bước Green (code tối thiểu), bỏ qua Refactor
+
+**Thời gian:** 2026-10-21 · **Người làm:** Claude viết code (theo yêu cầu của Ngọc); Ngọc commit · **Commit:** chưa
+
+### What
+
+- Viết code tối thiểu cho `validateTitle` để M1 xanh.
+- Đánh dấu `[x] M1` trong `docs/TEST-LIST.md`.
+- Bỏ qua bước Refactor ở vòng này.
+
+### Why
+
+- **Code tối thiểu:** chỉ viết đủ cho test hiện có. Chưa có test nào yêu cầu từ chối title rỗng hay quá 100 ký tự, nên **cố ý chưa xử lý** – các test M2, M4, M6 sẽ "kéo" ra từng nhánh `if` ở các vòng sau. Viết trước những thứ chưa có test = code không được kiểm chứng.
+- **Bỏ Refactor:** code mới có 1 dòng, chưa có trùng lặp hay "con số ma" để dọn. Kế hoạch ghi "Refactor (nếu cần)" – không cần thì không làm.
+- **Đánh dấu `[x]` cùng commit với Green:** `[x]` nghĩa là "kịch bản đã có test xanh", nên đi chung commit với code làm test xanh để `git log` khớp với `TEST-LIST.md`.
+
+### How
+
+```js
+function validateTitle(title) {
+  return title.trim();
+}
+
+module.exports = { validateTitle };
+```
+
+```
+✔ M1: trims a valid title
+ℹ tests 1 · pass 1 · fail 0   (exit 0)
+```
+
+**Kiểm tra test có tác dụng (mutation thủ công):** cố ý bỏ `.trim()` (`return title;`) → `✖ M1 · fail 1`; khôi phục → `pass 1`. Test bắt được đúng lỗi nó cần bắt.
+
+### Kết quả / Ghi chú
+
+- ✅ M1 xanh. `TEST-LIST.md`: 1/77.
+- Ghi vào `AI-LOG.md`: code Green do Claude viết; Ngọc cần đọc hiểu và giải thích được vì sao **chỉ** có `title.trim()`.
+- Trục trặc nhỏ khi làm: lệnh đánh dấu `[x]` chạy trước khi code được ghi (lúc đó test còn đỏ); đã ghi code và chạy lại → xanh. Bài học: luôn chạy test **sau cùng** rồi mới đánh dấu.
+- Còn chờ Ngọc: sửa message commit Red (`--amend`) và commit Green.

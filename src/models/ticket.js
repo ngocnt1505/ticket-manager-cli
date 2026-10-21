@@ -1,3 +1,5 @@
-function validateTitle(title) {}
+function validateTitle(title) {
+  return title.trim();
+}
 
 module.exports = { validateTitle };
