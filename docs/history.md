@@ -576,3 +576,48 @@ test('M4: rejects a title of 101 characters with TITLE_TOO_LONG', () => {
 - ✅ Đỏ đúng lý do: code chưa có giới hạn độ dài nên trả về title bình thường, không ném lỗi.
 - M1, M2 vẫn xanh.
 - Kèm theo: các dòng nhắc `AI-LOG.md` ở Bước 0, 1, 4, 5, 8, 10 được đổi thành "mục *Tổng kết làm việc với AI* cuối dự án", theo quyết định không dùng `AI-LOG.md`.
+
+> **Cập nhật Bước 11:** Ngọc commit bước Red: `b7da95f test(models): add failing test for title longer than 100 characters`.
+
+---
+
+## Bước 12 – Vòng TDD M4: bước Green (giới hạn 100 ký tự)
+
+**Thời gian:** 2026-10-21 · **Người làm:** Claude viết code (theo yêu cầu); Ngọc review và commit · **Commit:** chưa
+
+### What
+
+Thêm kiểm tra độ dài vào `validateTitle`, đánh dấu `[x] M4` trong `TEST-LIST.md`.
+
+### Why
+
+- Đặt kiểm tra **sau** kiểm tra rỗng và đo trên `clean` (đã trim) → khớp `DECISIONS.md` §3: độ dài tính sau khi trim.
+- Dùng `> 100`: 101 trở lên bị chặn, 100 được phép.
+- Chưa đặt tên hằng số cho `100` – để dành cho bước Refactor sau khi có test canh biên M3.
+
+### How
+
+```js
+const { ValidationError } = require('../errors');
+
+function validateTitle(title) {
+  const clean = title.trim();
+  if (!clean) throw new ValidationError('EMPTY_TITLE', 'Title is required');
+  if (clean.length > 100) {
+    throw new ValidationError('TITLE_TOO_LONG', 'Title must be at most 100 characters');
+  }
+  return clean;
+}
+```
+
+```
+✔ M1 · ✔ M2 · ✔ M4
+ℹ tests 3 · pass 3 · fail 0   (exit 0)
+```
+
+**Mutation thủ công – lộ ra lỗ hổng:** đổi `> 100` thành `>= 100` (chặn oan title đúng 100 ký tự) → **vẫn `pass 3`**. Bộ test hiện tại **không phát hiện** lỗi lệch biên này, vì chưa có test nào thử đúng 100 ký tự. Đã khôi phục code.
+
+### Kết quả / Ghi chú
+
+- ✅ M4 xanh. `TEST-LIST.md`: 3/77 (M1, M2, M4).
+- ⚠️ Lỗ hổng biên `>` / `>=` là lý do cần **M3** ở vòng tiếp theo: M3 phải đỏ với bản mutation `>=` và xanh với code thật.
