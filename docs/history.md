@@ -423,3 +423,50 @@ module.exports = { validateTitle };
 - Ghi vào `AI-LOG.md`: code Green do Claude viết; Ngọc cần đọc hiểu và giải thích được vì sao **chỉ** có `title.trim()`.
 - Trục trặc nhỏ khi làm: lệnh đánh dấu `[x]` chạy trước khi code được ghi (lúc đó test còn đỏ); đã ghi code và chạy lại → xanh. Bài học: luôn chạy test **sau cùng** rồi mới đánh dấu.
 - Còn chờ Ngọc: sửa message commit Red (`--amend`) và commit Green.
+
+> **Cập nhật Bước 7–8:** Ngọc đã sửa message commit Red bằng `git commit --amend` và commit Green, push:
+> `a636cbd test(models): add failing test for trimming title` → `de8f421 feat(models): trim title`.
+> Message không còn dấu cách ở đầu và đúng dạng `type(scope): subject`. **Vòng TDD M1 hoàn tất.**
+
+---
+
+## Bước 9 – Vòng TDD M2 (title rỗng → `EMPTY_TITLE`): bước Red
+
+**Thời gian:** 2026-10-21 · **Người làm:** Ngọc · **Commit:** chưa
+
+### What
+
+Thêm test M2 vào `test/unit/ticket.model.test.js`: title rỗng hoặc toàn khoảng trắng phải ném lỗi có `name: 'ValidationError'` và `code: 'EMPTY_TITLE'`.
+
+### Why
+
+- Vòng đầu tiên kiểm tra **lỗi** thay vì giá trị trả về. Theo `DECISIONS.md` §8, test kiểm tra `code` (hợp đồng ổn định, tầng CLI dựa vào để chọn exit code), không kiểm tra câu thông báo (có thể đổi bất cứ lúc nào).
+- Thử **3 giá trị** `''`, `'   '`, `'\t\n'`: nếu chỉ thử `''` thì code `if (title === '')` cũng qua, nhưng chuỗi toàn khoảng trắng sẽ lọt.
+- Test **không `require` file lỗi nào**, chỉ so `name` bằng chuỗi → test đỏ vì assertion chứ không vì thiếu module → **không cần stub** ở vòng này.
+
+### How
+
+```js
+test('M2: rejects an empty or whitespace-only title with EMPTY_TITLE', () => {
+  for (const blank of ['', '   ', '\t\n']) {
+    assert.throws(() => validateTitle(blank), {
+      name: 'ValidationError',
+      code: 'EMPTY_TITLE',
+    });
+  }
+});
+```
+
+```
+✔ M1: trims a valid title
+✖ M2: rejects an empty or whitespace-only title with EMPTY_TITLE
+  AssertionError [ERR_ASSERTION]: Missing expected exception (ValidationError).
+  actual: undefined
+  expected: { name: 'ValidationError', code: 'EMPTY_TITLE' }
+ℹ tests 2 · pass 1 · fail 1
+```
+
+### Kết quả / Ghi chú
+
+- ✅ Đỏ đúng lý do: `''.trim()` trả về `''` và không ném lỗi → `Missing expected exception`.
+- M1 vẫn xanh → thêm test mới không làm hỏng test cũ.
