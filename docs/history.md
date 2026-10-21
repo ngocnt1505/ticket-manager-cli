@@ -2083,3 +2083,60 @@ class NotFoundError extends TicketError {}
 - ✅ Refactor thứ ba của dự án; hành vi không đổi.
 - Commit đề xuất: `refactor(errors): share a TicketError base class`.
 - Tiếp theo: **vòng 9 – `updateTicket` (S16–S20)**, vòng cuối của 4.2.
+
+> **Cập nhật Bước 38:** Ngọc commit và push `c2c6811 refactor(errors): share a TicketError base class`.
+
+---
+
+## Bước 39 – Vòng 9 (`updateTicket` – S16–S20): bước Red
+
+**Thời gian:** 2026-10-21 · **Người làm:** Claude viết test + stub (theo yêu cầu); Ngọc review và commit · **Commit:** chưa
+
+### What
+
+Thêm 5 test cho `updateTicket(tickets, id, changes, now) → { tickets, ticket }` và stub rỗng.
+
+### Why
+
+- **S16** kiểm tra cả ticket trả về **và** vị trí của nó trong mảng mới (`result.tickets.find(id 2)` bằng `result.ticket`) – thứ CLI sẽ ghi xuống file.
+- **S17** khóa quyết định "`--tags` thay thế toàn bộ" ở tầng service (đã có ở model M24, kiểm tra lại vì service là nơi CLI gọi).
+- **S18 áp dụng ngay hai bài học:** điều kiện tiền đề "cập nhật đã thật sự xảy ra" (Bước 28) **và** "mảng đầu vào không đổi khi thành công" (P2) – không để lặp lại lỗ hổng của `createTicket`.
+- **S19, S20** kiểm tra lỗi **và** mảng đầu vào không đổi → nền móng của "lỗi thì CLI không ghi file". S19 dùng `NotFoundError` (exit 1 sau này), S20 dùng `ValidationError` (exit 2).
+
+### How
+
+```js
+const LATER = new Date('2026-10-22T09:30:00.000Z');
+
+test('S18: other tickets and the given list stay unchanged', () => {
+  const tickets = seed();
+  const snapshot = structuredClone(tickets);
+  const result = updateTicket(tickets, 2, { priority: 'high' }, LATER);
+  // Precondition: the update really happened.
+  assert.equal(result?.ticket.priority, 'high');
+  const others = (list) => list.filter((ticket) => ticket.id !== 2);
+  assert.deepEqual(others(result.tickets), others(snapshot));
+  assert.deepEqual(tickets, snapshot);
+});
+
+test('S19: an unknown id fails with NOT_FOUND and leaves the given list unchanged', () => {
+  const tickets = seed();
+  const snapshot = structuredClone(tickets);
+  assert.throws(() => updateTicket(tickets, 99, { status: 'done' }, LATER), {
+    name: 'NotFoundError',
+    code: 'NOT_FOUND',
+  });
+  assert.deepEqual(tickets, snapshot);
+});
+// S16, S17, S20 tương tự
+```
+
+```
+✖ S16 · ✖ S17 · ✖ S18 · ✖ S19 · ✖ S20   – đều AssertionError (0 TypeError)
+ℹ tests 49 · pass 44 · fail 5
+```
+
+### Kết quả / Ghi chú
+
+- ✅ Đỏ đúng lý do; 44 test cũ vẫn xanh.
+- Commit đề xuất: `test(services): add failing tests for updating a ticket`.

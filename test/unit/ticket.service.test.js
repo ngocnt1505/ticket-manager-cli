@@ -5,6 +5,7 @@ const {
   createTicket,
   listTickets,
   findTicket,
+  updateTicket,
 } = require('../../src/services/ticketService');
 const { buildTicket } = require('../../src/models/ticket');
 
@@ -127,4 +128,50 @@ test('S15: an unknown id fails with NOT_FOUND and names the id', () => {
       return true;
     },
   );
+});
+
+const LATER = new Date('2026-10-22T09:30:00.000Z');
+
+test('S16: changing the status saves it with a new updatedAt and keeps createdAt', () => {
+  const result = updateTicket(seed(), 2, { status: 'done' }, LATER);
+  assert.equal(result?.ticket.status, 'done');
+  assert.equal(result.ticket.updatedAt, LATER.toISOString());
+  assert.equal(result.ticket.createdAt, NOW.toISOString());
+  assert.deepEqual(result.tickets.find((ticket) => ticket.id === 2), result.ticket);
+});
+
+test('S17: --tags replaces all previous tags', () => {
+  const result = updateTicket(seed(), 1, { tags: 'ui' }, LATER);
+  assert.deepEqual(result?.ticket.tags, ['ui']);
+});
+
+test('S18: other tickets and the given list stay unchanged', () => {
+  const tickets = seed();
+  const snapshot = structuredClone(tickets);
+  const result = updateTicket(tickets, 2, { priority: 'high' }, LATER);
+  // Precondition: the update really happened.
+  assert.equal(result?.ticket.priority, 'high');
+  const others = (list) => list.filter((ticket) => ticket.id !== 2);
+  assert.deepEqual(others(result.tickets), others(snapshot));
+  assert.deepEqual(tickets, snapshot);
+});
+
+test('S19: an unknown id fails with NOT_FOUND and leaves the given list unchanged', () => {
+  const tickets = seed();
+  const snapshot = structuredClone(tickets);
+  assert.throws(() => updateTicket(tickets, 99, { status: 'done' }, LATER), {
+    name: 'NotFoundError',
+    code: 'NOT_FOUND',
+  });
+  assert.deepEqual(tickets, snapshot);
+});
+
+test('S20: an invalid value fails and leaves the given list unchanged', () => {
+  const tickets = seed();
+  const snapshot = structuredClone(tickets);
+  assert.throws(() => updateTicket(tickets, 1, { status: 'closed' }, LATER), {
+    name: 'ValidationError',
+    code: 'INVALID_STATUS',
+  });
+  assert.deepEqual(tickets, snapshot);
 });

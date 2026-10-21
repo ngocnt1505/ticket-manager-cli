@@ -35,4 +35,6 @@ function findTicket(tickets, id) {
   return ticket;
 }
 
-module.exports = { createTicket, listTickets, findTicket };
+function updateTicket(tickets, id, changes, now) {}
+
+module.exports = { createTicket, listTickets, findTicket, updateTicket };
