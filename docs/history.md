@@ -3327,3 +3327,49 @@ test('P6b: an unexpected error exits 1 with a short message and no stack trace',
 
 - ✅ Đỏ đúng lý do: cả hai test đỏ vì **`run` ném lỗi ra ngoài** thay vì trả về exit code – đó chính là hành vi cần sửa ("`run` không bao giờ được văng lỗi"). Lỗi ném ra là lỗi thật của code sản phẩm (khác M22/C14, nơi lỗi nằm ở dòng test).
 - Commit đề xuất: `test(cli): add failing tests for unexpected errors and built-in names`.
+
+> **Cập nhật Bước 58:** Ngọc commit `8dd0d90 test(cli): add failing tests for unexpected errors and built-in names`.
+
+---
+
+## Bước 59 – P6: bước Green (`Object.hasOwn`, nhánh bắt lỗi bất ngờ) – hoàn tất phần code
+
+**Thời gian:** 2026-10-21 · **Người làm:** Claude viết code (theo yêu cầu); Ngọc review và commit · **Commit:** chưa
+
+### What
+
+Hai thay đổi trong `src/cli.js`; đánh dấu `[x] P6`.
+
+### How
+
+```js
+// findCommand
+// Own keys only: COMMANDS.toString exists on every object but is not a command.
+const command = Object.hasOwn(COMMANDS, name) ? COMMANDS[name] : undefined;
+
+// cuối khối catch của run
+// Anything else is a bug: report it briefly, never with a stack trace.
+io.stderr(`Unexpected error: ${err.message}`);
+return 1;
+```
+
+### Why
+
+- **`Object.hasOwn(COMMANDS, name)`** chỉ nhận các khóa do chính chương trình khai báo (`create`, `list`, `show`, `update`), bỏ qua thuộc tính kế thừa từ `Object.prototype` (`toString`, `constructor`…).
+- **Nhánh cuối thay cho `throw err`**: `run` giờ **không bao giờ văng lỗi** – mọi lỗi đều thành một dòng trên stderr và một exit code. Bug vẫn được báo (exit 1, có nội dung lỗi) nhưng không đổ stack trace lên người dùng.
+- Khối `catch` giờ đọc như bảng quyết định trong `DECISIONS.md` §8: lỗi cách dùng → 2 · lỗi dữ liệu → 1 · bug → 1.
+
+```
+ℹ tests 84 · pass 84 · fail 0   (exit 0)
+
+$ tickets toString
+Error: Unknown command "toString". Available commands: create, list, show, update   (exit 2)
+```
+
+**Mutation thủ công:** bỏ `Object.hasOwn` → ✖ P6a · in `err.stack` thay vì thông báo ngắn → ✖ P6b.
+
+### Kết quả / Ghi chú
+
+- ✅ **Phần code hoàn tất:** toàn bộ 77 mục test list + **6 mục Phát sinh** (P1–P6), **84 test xanh**.
+- Commit đề xuất: `fix(cli): treat built-in names as unknown commands and hide stack traces`.
+- Tiếp theo (kế hoạch 4.4, mục cuối): **chạy thử bằng tay với `npm link`** – Ngọc tự làm.

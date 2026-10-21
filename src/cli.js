@@ -29,14 +29,17 @@ function run(argv, io) {
       io.stderr(`Error: ${err.message}`);
       return 1;
     }
-    throw err;
+    // Anything else is a bug: report it briefly, never with a stack trace.
+    io.stderr(`Unexpected error: ${err.message}`);
+    return 1;
   }
 }
 
 function findCommand(name) {
   const available = `Available commands: ${Object.keys(COMMANDS).join(', ')}`;
   if (name === undefined) throw new UsageError('MISSING_COMMAND', `Missing command. ${available}`);
-  const command = COMMANDS[name];
+  // Own keys only: COMMANDS.toString exists on every object but is not a command.
+  const command = Object.hasOwn(COMMANDS, name) ? COMMANDS[name] : undefined;
   if (!command) throw new UsageError('UNKNOWN_COMMAND', `Unknown command "${name}". ${available}`);
   return command;
 }
