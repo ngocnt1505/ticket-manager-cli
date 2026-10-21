@@ -17,4 +17,8 @@ function validateTitle(title) {
   return clean;
 }
 
-module.exports = { validateTitle };
+function validateStatus(status) {}
+
+function validatePriority(priority) {}
+
+module.exports = { validateTitle, validateStatus, validatePriority };

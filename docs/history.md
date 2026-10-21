@@ -818,3 +818,74 @@ Chứng minh hành vi không đổi:
 - ✅ Refactor đầu tiên của dự án. Hoàn tất **vòng 1** của Giai đoạn 4.1 (Title).
 - Commit đề xuất: `refactor(models): extract title length limit`.
 - Tiếp theo: **vòng 2** – status và priority (M7–M10).
+
+> **Cập nhật Bước 16:** Ngọc commit và push `7843165 refactor(models): extract title length limit`. **Vòng 1 (Title, M1–M6) hoàn tất.**
+
+---
+
+## Bước 17 – Vòng 2 (status, priority – M7–M10): bước Red
+
+**Thời gian:** 2026-10-21 · **Người làm:** Claude viết test + stub (theo yêu cầu); Ngọc review và commit · **Commit:** chưa
+
+### What
+
+- Thêm 4 test: M7 (status hợp lệ), M8 (status sai → `INVALID_STATUS`, thông báo liệt kê giá trị hợp lệ), M9 (priority hợp lệ), M10 (priority sai → `INVALID_PRIORITY`).
+- Thêm **stub** rỗng `validateStatus`, `validatePriority` trong `src/models/ticket.js` và export chúng.
+
+### Why
+
+- **Gom 4 test vào một vòng** (theo kế hoạch 5 vòng đã chốt): status và priority có cùng quy tắc "giá trị phải thuộc một danh sách cố định", nên Red → Green một lần là đủ rõ.
+- **Cần stub**: khác M2–M6, lần này test gọi **hàm chưa tồn tại**. Không có stub thì `validateStatus` là `undefined` → lỗi `validateStatus is not a function`, đỏ vì thiếu code chứ không vì assertion.
+- **Giá trị thử trong M8/M10**:
+  - `'OPEN'`, `'High'` – sai chữ hoa, phải bị từ chối (`DECISIONS.md` §2: không tự sửa);
+  - `''`, `undefined` – rỗng/thiếu. Mặc định `open`/`medium` **không** phải việc của hàm validate mà của hàm tạo ticket (M21) – validate chỉ trả lời "giá trị này có hợp lệ không".
+- **M8 kiểm tra thêm câu thông báo** (`/open, in_progress, done/`) – ngoại lệ có chủ ý so với quy tắc "chỉ kiểm tra `code`": `DECISIONS.md` §2 yêu cầu thông báo **liệt kê giá trị hợp lệ** để người dùng biết sửa thế nào; đó là hành vi, nên cần test. Chỉ khớp phần danh sách, không khớp cả câu.
+
+### How
+
+```js
+// src/models/ticket.js – stub
+function validateStatus(status) {}
+
+function validatePriority(priority) {}
+
+module.exports = { validateTitle, validateStatus, validatePriority };
+```
+
+```js
+test('M7: accepts open, in_progress and done as status', () => {
+  for (const status of ['open', 'in_progress', 'done']) {
+    assert.equal(validateStatus(status), status);
+  }
+});
+
+test('M8: rejects other status values with INVALID_STATUS and lists the allowed ones', () => {
+  for (const bad of ['closed', 'OPEN', '', undefined]) {
+    assert.throws(
+      () => validateStatus(bad),
+      (err) => {
+        assert.equal(err.name, 'ValidationError');
+        assert.equal(err.code, 'INVALID_STATUS');
+        assert.match(err.message, /open, in_progress, done/);
+        return true;
+      },
+    );
+  }
+});
+
+// M9, M10: tương tự cho priority (low, medium, high / urgent, High, '', undefined)
+```
+
+```
+✔ M1 … ✔ M6
+✖ M7  AssertionError: actual: undefined, expected: 'open'
+✖ M8  AssertionError: Missing expected exception.
+✖ M9  AssertionError: actual: undefined, expected: 'low'
+✖ M10 AssertionError: Missing expected exception.
+ℹ tests 10 · pass 6 · fail 4
+```
+
+### Kết quả / Ghi chú
+
+- ✅ Cả 4 test đỏ vì **AssertionError** (stub trả `undefined` / không ném lỗi) → đỏ đúng lý do. 6 test Title vẫn xanh.
+- Commit đề xuất: `test(models): add failing tests for status and priority`.
