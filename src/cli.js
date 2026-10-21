@@ -6,6 +6,7 @@ const COMMANDS = {
   create: require('./commands/create'),
   list: require('./commands/list'),
   show: require('./commands/show'),
+  update: require('./commands/update'),
 };
 
 // Runs one command and returns the exit code. Everything outside the program

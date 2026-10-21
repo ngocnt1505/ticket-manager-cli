@@ -111,3 +111,42 @@ test('C10: a malformed id exits 2; 1 and 42 are accepted as ids', () => {
   assert.equal(exec('show', '1').code, 0);
   assert.equal(exec('show', '42').code, 1, '42 is a valid id that simply does not exist');
 });
+
+test('C6: update changes the ticket, confirms the change and exits 0', () => {
+  const { exec, store } = cli();
+  exec('create', '--title', 'Fix login');
+  const r = exec('update', '1', '--status', 'done');
+  assert.equal(r.code, 0);
+  assert.equal(r.stdout, 'Updated ticket #1 (status: done)');
+  assert.equal(store.tickets[0].status, 'done');
+});
+
+test('C7: update without any option exits 2, names the options and saves nothing', () => {
+  const { exec, store } = cli();
+  exec('create', '--title', 'Fix login');
+  const savesBefore = store.saves;
+  const r = exec('update', '1');
+  assert.equal(r.code, 2);
+  assert.equal(r.stdout, '');
+  assert.match(r.stderr, /--status/);
+  assert.equal(store.saves, savesBefore);
+});
+
+test('C8: invalid values exit 2 with a helpful message and save nothing', () => {
+  const { exec, store } = cli();
+  exec('create', '--title', 'Fix login');
+  const savesBefore = store.saves;
+  const cases = [
+    [['update', '1', '--status', 'closed'], /open, in_progress, done/],
+    [['create', '--title', 'x', '--priority', 'urgent'], /low, medium, high/],
+    [['create', '--title', 'a'.repeat(101)], /100/],
+    [['list', '--status', 'closed'], /open, in_progress, done/],
+  ];
+  for (const [argv, message] of cases) {
+    const r = exec(...argv);
+    assert.equal(r.code, 2, argv.join(' '));
+    assert.equal(r.stdout, '', argv.join(' '));
+    assert.match(r.stderr, message, argv.join(' '));
+  }
+  assert.equal(store.saves, savesBefore);
+});

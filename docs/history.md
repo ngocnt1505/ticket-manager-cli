@@ -2957,3 +2957,63 @@ function parseCommandLine(args, options) {
 - ✅ C5, C9, C10 xanh.
 - Commit đề xuất: `feat(cli): add the show command with id validation`.
 - Tiếp theo: **vòng 14 – `update` và lỗi validation (C6–C8)**.
+
+> **Cập nhật Bước 52:** Ngọc commit và push `c1234f1 feat(cli): add the show command with id validation`. **Vòng 13 hoàn tất.**
+
+---
+
+## Bước 53 – Vòng 14 (`update`, lỗi validation – C6–C8): bước Red
+
+**Thời gian:** 2026-10-21 · **Người làm:** Claude viết test + stub (theo yêu cầu); Ngọc review và commit · **Commit:** chưa
+
+### What
+
+- Thêm 3 test vào `test/unit/cli.test.js`.
+- Stub `src/commands/update.js`: **khai báo đủ 5 option** nhưng `execute` rỗng; đăng ký vào `COMMANDS`.
+
+### Why
+
+- **Stub khai báo đủ option** (không để `options: {}`): nếu thiếu, `parseArgs` coi `--status` là option lạ → exit 2 vì **sai lý do** – C8 có thể xanh giả ở dòng `code === 2`.
+- **C6** so chính xác dòng xác nhận `Updated ticket #1 (status: done)` – người dùng thấy trường nào đã đổi thành gì.
+- **C7** – update không có option: phải exit 2, thông báo **gọi tên option** (`--status`…) chứ không phải tên trường nội bộ, và không ghi gì.
+- **C8 – lỗi validation từ model phải ra exit 2** (`DECISIONS.md` §8: nhìn lệnh là biết sai). Thử 4 lệnh qua 3 tầng khác nhau:
+  - `update --status closed`, `create --priority urgent`, `create --title <101 ký tự>`, `list --status closed`;
+  - thông báo phải giúp sửa (liệt kê giá trị hợp lệ / nói giới hạn 100);
+  - **không ghi gì** sau cả 4 lệnh sai (`store.saves` không đổi).
+- Đặt lệnh `update` **đầu tiên** trong C8: stub không làm gì → `exit 0` → `AssertionError` ngay (đỏ đúng lý do). Nếu đặt `create --priority urgent` trước, `run` hiện chưa bắt `ValidationError` → lỗi văng ra ngoài thay vì một assertion thất bại.
+
+### How
+
+```js
+test('C8: invalid values exit 2 with a helpful message and save nothing', () => {
+  const { exec, store } = cli();
+  exec('create', '--title', 'Fix login');
+  const savesBefore = store.saves;
+  const cases = [
+    [['update', '1', '--status', 'closed'], /open, in_progress, done/],
+    [['create', '--title', 'x', '--priority', 'urgent'], /low, medium, high/],
+    [['create', '--title', 'a'.repeat(101)], /100/],
+    [['list', '--status', 'closed'], /open, in_progress, done/],
+  ];
+  for (const [argv, message] of cases) {
+    const r = exec(...argv);
+    assert.equal(r.code, 2, argv.join(' '));
+    assert.equal(r.stdout, '', argv.join(' '));
+    assert.match(r.stderr, message, argv.join(' '));
+  }
+  assert.equal(store.saves, savesBefore);
+});
+// C6, C7: xem file test
+```
+
+```
+✖ C6  actual: ''   (chưa in dòng xác nhận)
+✖ C7  actual: 0    (chưa báo lỗi)
+✖ C8  AssertionError: update 1 --status closed – actual: 0
+ℹ tests 74 · pass 71 · fail 3
+```
+
+### Kết quả / Ghi chú
+
+- ✅ Cả 3 đỏ đúng lý do (`AssertionError`); 71 test cũ vẫn xanh.
+- Commit đề xuất: `test(cli): add failing tests for update and validation errors`.
