@@ -1069,3 +1069,69 @@ test('M14: rejects a non-string description with INVALID_DESCRIPTION', () => {
 
 - ✅ Đỏ đúng lý do; 10 test cũ vẫn xanh.
 - Commit đề xuất: `test(models): add failing tests for description`.
+
+> **Cập nhật Bước 20:** Ngọc commit `b1ba911 test(models): add failing tests for description`.
+
+---
+
+## Bước 21 – Vòng 3: bước Green (`validateDescription`) – cân nhắc Refactor nhưng không làm
+
+**Thời gian:** 2026-10-21 · **Người làm:** Claude viết code (theo yêu cầu); Ngọc review và commit · **Commit:** chưa
+
+### What
+
+Viết `validateDescription` và hằng `MAX_DESCRIPTION_LENGTH = 1000`; đánh dấu `[x]` M11–M14.
+
+### Why
+
+- Thứ tự kiểm tra: `undefined` → `''` (không nhập) **trước**, rồi mới kiểm tra kiểu (nhập sai kiểu), rồi trim, rồi độ dài sau trim – cùng thứ tự với `validateTitle` cho dễ đọc.
+- Dùng `=== undefined` chứ không `== null`: `== null` khớp cả `null`, làm `null` bị coi là "không nhập" thay vì sai kiểu (trái `DECISIONS.md`).
+- Đặt tên hằng ngay từ Green (khác title): đã có quy ước `MAX_TITLE_LENGTH` từ Refactor trước, viết theo luôn thì không phải refactor lại.
+
+### How
+
+```js
+const MAX_DESCRIPTION_LENGTH = 1000;
+
+function validateDescription(description) {
+  if (description === undefined) return '';
+  if (typeof description !== 'string') {
+    throw new ValidationError('INVALID_DESCRIPTION', 'Description must be text');
+  }
+  const clean = description.trim();
+  if (clean.length > MAX_DESCRIPTION_LENGTH) {
+    throw new ValidationError(
+      'DESCRIPTION_TOO_LONG',
+      `Description must be at most ${MAX_DESCRIPTION_LENGTH} characters`,
+    );
+  }
+  return clean;
+}
+```
+
+```
+ℹ tests 14 · pass 14 · fail 0   (exit 0)
+```
+
+**Mutation thủ công** – mỗi lỗi bị đúng một test bắt:
+
+| Mutation | Test đỏ |
+|---|---|
+| `>` → `>=` (chặn oan 1000 ký tự) | M13 |
+| `=== undefined` → `== null` (`null` lọt qua thành `''`) | M14 |
+| Bỏ `.trim()` | M12 |
+
+### Refactor: cân nhắc và quyết định **không** làm
+
+`validateTitle` và `validateDescription` giống nhau một phần (kiểm tra chuỗi → trim → kiểm tra độ dài). Có thể gộp thành helper kiểu `cleanText(value, max, codes)`, nhưng:
+
+- hai hàm **khác nhau thật**: title bắt buộc (rỗng → lỗi), description không bắt buộc (`undefined` → `''`, rỗng vẫn hợp lệ);
+- mỗi hàm có 3 mã lỗi riêng → helper phải nhận nhiều tham số, khó đọc hơn hai hàm ngắn hiện tại.
+
+→ Giữ nguyên. Kế hoạch ghi "Refactor **nếu cần**"; trùng lặp ít mà gộp làm code khó hiểu hơn thì không đáng (tránh trừu tượng hóa quá sớm – Report §6.5).
+
+### Kết quả / Ghi chú
+
+- ✅ **Vòng 3 (M11–M14) hoàn tất** sau commit này. `TEST-LIST.md`: 14/77.
+- Commit đề xuất: `feat(models): validate description`.
+- Tiếp theo: **vòng 4 – tags (M15–M20)**.

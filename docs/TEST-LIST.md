@@ -31,10 +31,10 @@ Danh sách kịch bản cần test, viết **trước khi code** (Canon TDD, Rep
 
 ### Description
 
-- [ ] **M11** Không có description → `''` *(mới)*
-- [ ] **M12** Description được trim *(mới)*
-- [ ] **M13** Description 1000 ký tự hợp lệ, 1001 ký tự → lỗi `DESCRIPTION_TOO_LONG` *(mới, biên)*
-- [ ] **M14** Description không phải chuỗi (`null`, `7`) → lỗi `INVALID_DESCRIPTION` *(mới)*
+- [x] **M11** Không có description → `''` *(mới)*
+- [x] **M12** Description được trim *(mới)*
+- [x] **M13** Description 1000 ký tự hợp lệ, 1001 ký tự → lỗi `DESCRIPTION_TOO_LONG` *(mới, biên)*
+- [x] **M14** Description không phải chuỗi (`null`, `7`) → lỗi `INVALID_DESCRIPTION` *(mới)*
 
 ### Tags
 

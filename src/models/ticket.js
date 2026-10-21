@@ -1,6 +1,7 @@
 const { ValidationError } = require('../errors');
 
 const MAX_TITLE_LENGTH = 100;
+const MAX_DESCRIPTION_LENGTH = 1000;
 const STATUSES = ['open', 'in_progress', 'done'];
 const PRIORITIES = ['low', 'medium', 'high'];
 
@@ -38,7 +39,20 @@ function validatePriority(priority) {
   return oneOf(priority, PRIORITIES, 'INVALID_PRIORITY', 'priority');
 }
 
-function validateDescription(description) {}
+function validateDescription(description) {
+  if (description === undefined) return '';
+  if (typeof description !== 'string') {
+    throw new ValidationError('INVALID_DESCRIPTION', 'Description must be text');
+  }
+  const clean = description.trim();
+  if (clean.length > MAX_DESCRIPTION_LENGTH) {
+    throw new ValidationError(
+      'DESCRIPTION_TOO_LONG',
+      `Description must be at most ${MAX_DESCRIPTION_LENGTH} characters`,
+    );
+  }
+  return clean;
+}
 
 module.exports = {
   STATUSES,
