@@ -1409,3 +1409,59 @@ test('M22: a ticket with every field uses the validated values', () => {
 - ✅ M21 đỏ đúng lý do (`AssertionError`).
 - M22 đỏ vì `TypeError` – nhưng lỗi xảy ra ở **dòng test** `ticket.id` (stub trả `undefined`), không phải trong code sản phẩm. Ý nghĩa vẫn là "chưa tạo ra ticket" → chấp nhận là đỏ đúng lý do. Phân biệt với M6/P1, nơi `TypeError` xuất phát **từ code sản phẩm** – đó mới là lỗi cần sửa.
 - Commit đề xuất: `test(models): add failing tests for building a ticket`.
+
+> **Cập nhật Bước 26:** Ngọc commit `fbc8f40 test(models): add failing tests for building a ticket`.
+
+---
+
+## Bước 27 – Vòng 5a: bước Green (`buildTicket`)
+
+**Thời gian:** 2026-10-21 · **Người làm:** Claude viết code (theo yêu cầu); Ngọc review và commit · **Commit:** chưa
+
+### What
+
+Viết `buildTicket` bằng cách **ghép các hàm validate đã có**; đánh dấu `[x]` M21, M22.
+
+### Why
+
+- **Dùng lại, không viết lại:** mỗi trường đi qua đúng hàm validate của nó (đã được test riêng ở M1–M20, P1) → `buildTicket` chỉ lo việc ghép và điền mặc định.
+- **Mặc định dùng `??` chứ không `||`:** `input.status ?? 'open'` chỉ thay khi giá trị là `undefined`/`null`. Nếu dùng `||`, chuỗi rỗng `''` cũng bị âm thầm đổi thành `'open'` – che mất lỗi nhập; với `??`, `''` đi tới `validateStatus` và bị từ chối (đúng M8).
+- **`createdAt` và `updatedAt` dùng chung một biến `timestamp`:** gọi `now.toISOString()` một lần → hai trường chắc chắn bằng nhau.
+
+### How
+
+```js
+// `id` and `now` come from the caller: the model has no data to pick an id
+// and never reads the clock, so it stays a pure, testable function.
+function buildTicket(input, { id, now }) {
+  const timestamp = now.toISOString();
+  return {
+    id,
+    title: validateTitle(input.title),
+    description: validateDescription(input.description),
+    status: validateStatus(input.status ?? 'open'),
+    priority: validatePriority(input.priority ?? 'medium'),
+    tags: normalizeTags(input.tags),
+    createdAt: timestamp,
+    updatedAt: timestamp,
+  };
+}
+```
+
+```
+ℹ tests 23 · pass 23 · fail 0   (exit 0)
+```
+
+**Mutation thủ công:**
+
+| Mutation | Test đỏ |
+|---|---|
+| Mặc định status `'done'` thay vì `'open'` | M21 |
+| Bỏ `validatePriority(...)` (gán thẳng) | M22 – `'urgent'` lọt qua |
+| Thêm trường thừa `extra: true` | M21 – nhờ `deepEqual` cả object |
+
+### Kết quả / Ghi chú
+
+- ✅ **Vòng 5a hoàn tất** sau commit này. `TEST-LIST.md`: 23 mục `[x]`.
+- Commit đề xuất: `feat(models): build a ticket with defaults`.
+- Tiếp theo: **vòng 5b – `applyUpdate` (M23–M27)**; lưu ý bẫy "xanh giả" với test "không sửa ticket gốc" (M24).

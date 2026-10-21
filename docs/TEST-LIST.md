@@ -47,8 +47,8 @@ Danh sách kịch bản cần test, viết **trước khi code** (Canon TDD, Rep
 
 ### Tạo và cập nhật một ticket (hàm thuần)
 
-- [ ] **M21** Tạo ticket chỉ với title → điền mặc định: `status = open`, `priority = medium`, `description = ''`, `tags = []`; gắn `id`, `createdAt = updatedAt = now` *(W1)*
-- [ ] **M22** Tạo ticket với đủ trường → dùng đúng giá trị đã validate *(mới)*
+- [x] **M21** Tạo ticket chỉ với title → điền mặc định: `status = open`, `priority = medium`, `description = ''`, `tags = []`; gắn `id`, `createdAt = updatedAt = now` *(W1)*
+- [x] **M22** Tạo ticket với đủ trường → dùng đúng giá trị đã validate *(mới)*
 - [ ] **M23** Cập nhật chỉ đổi trường được yêu cầu và làm mới `updatedAt`; `id`, `createdAt` giữ nguyên *(W1)*
 - [ ] **M24** Cập nhật không sửa object ticket gốc (trả về object mới) *(mới)*
 - [ ] **M25** Một giá trị sai → từ chối **cả** lần cập nhật, ticket không bị đổi một nửa *(W1)*

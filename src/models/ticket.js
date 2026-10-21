@@ -75,7 +75,21 @@ function normalizeTags(tags) {
   return [...new Set(clean)];
 }
 
-function buildTicket(input, { id, now }) {}
+// `id` and `now` come from the caller: the model has no data to pick an id
+// and never reads the clock, so it stays a pure, testable function.
+function buildTicket(input, { id, now }) {
+  const timestamp = now.toISOString();
+  return {
+    id,
+    title: validateTitle(input.title),
+    description: validateDescription(input.description),
+    status: validateStatus(input.status ?? 'open'),
+    priority: validatePriority(input.priority ?? 'medium'),
+    tags: normalizeTags(input.tags),
+    createdAt: timestamp,
+    updatedAt: timestamp,
+  };
+}
 
 module.exports = {
   STATUSES,
