@@ -621,3 +621,54 @@ function validateTitle(title) {
 
 - ✅ M4 xanh. `TEST-LIST.md`: 3/77 (M1, M2, M4).
 - ⚠️ Lỗ hổng biên `>` / `>=` là lý do cần **M3** ở vòng tiếp theo: M3 phải đỏ với bản mutation `>=` và xanh với code thật.
+
+> **Cập nhật Bước 12:** Ngọc commit Green và push: `cd8a061 feat(models): reject titles longer than 100 characters`. **Vòng TDD M4 hoàn tất.**
+
+---
+
+## Bước 13 – M3 và M5: test canh biên (xanh ngay, chứng minh bằng mutation)
+
+**Thời gian:** 2026-10-21 · **Người làm:** Claude viết test (theo yêu cầu); Ngọc review và commit · **Commit:** chưa
+
+### What
+
+Thêm 2 test:
+
+- **M3**: title đúng 100 ký tự → hợp lệ;
+- **M5**: title 100 ký tự kèm khoảng trắng hai đầu → hợp lệ (độ dài đo **sau** trim).
+
+Đánh dấu `[x] M3`, `[x] M5`.
+
+### Why
+
+- Hai test này **không thể đỏ** với code hiện tại (code đã đúng) → không có bước Red/Green như thường. Đây là **test canh biên** (characterization / guard test): chúng không "kéo" ra code mới, mà **khóa** hành vi đúng, để sau này sửa hay refactor sai thì bị phát hiện.
+- Một test xanh ngay thì phải **chứng minh** được nó có tác dụng – nếu không, nó có thể là "xanh giả" (bài học Week 1). Cách chứng minh: cố ý làm hỏng code (mutation) và thấy test đỏ.
+- Report tuần 1 (Ghi chú 1, §2.3): *"Test 'đúng 100 ký tự' và test '101 ký tự' cần đi cùng nhau. Thiếu một trong hai, sẽ có một kiểu sửa sai ở biên không bị phát hiện."* – Bước 12 đã thấy đúng điều này.
+
+### How
+
+```js
+test('M3: accepts a title of exactly 100 characters', () => {
+  const title = 'a'.repeat(100);
+  assert.equal(validateTitle(title), title);
+});
+
+test('M5: measures the length after trimming', () => {
+  const title = 'a'.repeat(100);
+  assert.equal(validateTitle(`  ${title}  `), title);
+});
+```
+
+| Lần chạy | Kết quả |
+|---|---|
+| Code thật (`clean.length > 100`) | ✔ 5/5 |
+| **Mutation 1:** `>= 100` (chặn oan 100 ký tự) | ✖ **M3**, ✖ **M5** – `pass 3 · fail 2` |
+| **Mutation 2:** `title.length > 100` (đo trước khi trim) | ✖ **M5** – `pass 4 · fail 1` |
+| Khôi phục | ✔ 5/5 |
+
+### Kết quả / Ghi chú
+
+- ✅ Lỗ hổng `>` / `>=` ở Bước 12 đã được lấp: trước khi có M3, mutation `>=` vẫn `pass 3`; giờ bị bắt.
+- Mỗi test bắt được một lỗi mà test khác không bắt: **M3** bắt lệch biên, **M5** bắt đo sai chỗ (trước trim). → Không test nào thừa.
+- Commit đề xuất: `test(models): add boundary tests for title length` – dùng `test:` vì chỉ thêm test, không đổi code.
+- `TEST-LIST.md`: 5/77.
