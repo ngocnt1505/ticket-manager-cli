@@ -2035,3 +2035,51 @@ function findTicket(tickets, id) {
 - So sánh `candidate.id === id` (so sánh nghiêm ngặt): tầng CLI phải chuyển `"2"` (chuỗi từ dòng lệnh) thành số `2` trước khi gọi – sẽ có test cho id sai định dạng ở C10.
 - **Mùi code cho bước Refactor tiếp theo:** `ValidationError` và `NotFoundError` giống hệt nhau, chỉ khác `name` → gộp vào một lớp cha.
 - Commit đề xuất: `feat(services): find a ticket by id`.
+
+> **Cập nhật Bước 37:** Ngọc commit và push `49f4085 feat(services): find a ticket by id`.
+
+---
+
+## Bước 38 – Refactor: lớp cha `TicketError` cho mọi lỗi có `code`
+
+**Thời gian:** 2026-10-21 · **Người làm:** Claude (theo yêu cầu); Ngọc review và commit · **Commit:** chưa
+
+### What
+
+Gộp phần chung của `ValidationError` và `NotFoundError` vào lớp cha `TicketError`; hai lớp con không còn thân hàm. Không sửa test.
+
+### Why
+
+- Hai lớp giống hệt nhau, chỉ khác `name`. Lớp lỗi thứ ba (lỗi file – Storage 4.3) sắp xuất hiện → gộp **trước** để không chép lần thứ ba.
+- `this.name = this.constructor.name` → `name` tự lấy theo tên lớp con, không phải viết tay (và không thể gõ sai).
+- `TicketError` cho tầng CLI một cách nhận diện chung: `err instanceof TicketError` = lỗi đã lường trước (in thông báo gọn); ngược lại = bug (sẽ xử lý riêng, không lộ stack trace).
+
+### How
+
+```js
+// Every expected failure carries a stable `code`; `name` tells the kind of failure
+// (the CLI will map ValidationError → exit 2, NotFoundError → exit 1).
+class TicketError extends Error {
+  constructor(code, message) {
+    super(message);
+    this.name = this.constructor.name;
+    this.code = code;
+  }
+}
+
+class ValidationError extends TicketError {}
+
+class NotFoundError extends TicketError {}
+```
+
+| Kiểm tra | Kết quả |
+|---|---|
+| File test có bị sửa không (checksum 2 file) | `OK`, `OK` |
+| `npm test` | `tests 44 · pass 44 · fail 0` |
+| `name`, `code`, kế thừa | `ValidationError X true` · `NotFoundError NOT_FOUND true` · `NotFoundError` **không** phải `ValidationError` |
+
+### Kết quả / Ghi chú
+
+- ✅ Refactor thứ ba của dự án; hành vi không đổi.
+- Commit đề xuất: `refactor(errors): share a TicketError base class`.
+- Tiếp theo: **vòng 9 – `updateTicket` (S16–S20)**, vòng cuối của 4.2.

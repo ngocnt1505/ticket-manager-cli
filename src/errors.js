@@ -1,17 +1,15 @@
-class ValidationError extends Error {
+// Every expected failure carries a stable `code`; `name` tells the kind of failure
+// (the CLI will map ValidationError → exit 2, NotFoundError → exit 1).
+class TicketError extends Error {
   constructor(code, message) {
     super(message);
-    this.name = 'ValidationError';
+    this.name = this.constructor.name;
     this.code = code;
   }
 }
 
-class NotFoundError extends Error {
-  constructor(code, message) {
-    super(message);
-    this.name = 'NotFoundError';
-    this.code = code;
-  }
-}
+class ValidationError extends TicketError {}
 
-module.exports = { ValidationError, NotFoundError };
+class NotFoundError extends TicketError {}
+
+module.exports = { TicketError, ValidationError, NotFoundError };
