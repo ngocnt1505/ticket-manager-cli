@@ -1614,3 +1614,98 @@ function applyUpdate(ticket, changes, now) {
 - Đã gặp và xử lý **2 "xanh giả"**: file test chưa lưu (Bước 6) và test "không đổi" với stub (Bước 28, chặn trước khi commit).
 - Commit đề xuất: `feat(models): apply updates without partial changes`.
 - Tiếp theo: **Giai đoạn 4.2 – Services (S1–S20)**.
+
+> **Cập nhật Bước 29:** Ngọc commit và push `db24dfa feat(models): apply updates without partial changes`. **Giai đoạn 4.1 (Models) hoàn tất.**
+
+---
+
+## Bước 30 – Giai đoạn 4.2: chọn kiến trúc service – hàm thuần trên mảng
+
+**Thời gian:** 2026-10-21 · **Người làm:** Ngọc quyết định; Claude soạn tài liệu · **Commit:** chưa
+
+### What
+
+- Ngọc chọn giữa 2 thiết kế cho tầng service:
+
+| Phương án | Cách hoạt động | Test |
+|---|---|---|
+| **Hàm thuần trên mảng** ✅ | `createTicket(tickets, input, now) → { tickets, ticket }`; CLI tự `load` → service → `save` | Gọi hàm với mảng, so kết quả – không cần bản giả |
+| Service object + repository | Service nhận object có `load()`/`save()`, tự đọc ghi | Cần repository giả trong bộ nhớ, đếm số lần `save` |
+
+- Thêm mục **§9 Kiến trúc tầng service** vào `DECISIONS.md`.
+- Sửa câu chữ 5 mục trong `TEST-LIST.md` (S1, S3, S4, S19, S20) cho khớp: service không tự lưu nữa → "không lưu" đổi thành "**mảng đầu vào không đổi**".
+
+### Why
+
+- Đúng chữ "**logic trên mảng**" trong kế hoạch 4.2 và Report tuần 1 §4.1 ("logic: làm việc với mảng, không đụng file").
+- Unit test đơn giản nhất: không có bản giả nào phải viết và phải tin.
+- "Lỗi thì không lưu" được bảo đảm **bởi cấu trúc**: service ném lỗi trước khi trả mảng mới → CLI không có gì để `save`. Không phụ thuộc việc lập trình viên nhớ kiểm tra.
+- Đánh đổi chấp nhận: tầng CLI phải tự làm `load` → gọi → `save` ở mỗi lệnh ghi (create, update).
+
+### Kết quả / Ghi chú
+
+- Test list được sửa **trước** khi viết test – đặc tả đổi thì test list đổi theo, không để test và danh sách lệch nhau.
+- Commit đề xuất (riêng, trước commit Red): `docs: choose pure array functions for services`.
+
+---
+
+## Bước 31 – Vòng 6 (`createTicket` – S1–S4): bước Red
+
+**Thời gian:** 2026-10-21 · **Người làm:** Claude viết test + stub (theo yêu cầu); Ngọc review và commit · **Commit:** chưa
+
+### What
+
+Tạo `test/unit/ticket.service.test.js` (4 test) và `src/services/ticketService.js` (stub `createTicket`).
+
+### Why
+
+- **S1 so cả kết quả** `{ tickets, ticket }` với ticket dựng bằng `buildTicket` (đã được test ở 4.1) → khẳng định service **dùng** model để tạo ticket, không tự làm lại phần mặc định.
+- **S2 dùng ticket tối giản `{ id: 2 }`…:** chỉ `id` liên quan tới việc sinh id; thêm trường khác làm test khó đọc.
+- **S3 nối hai lần tạo** trên mảng trả về → chứng minh id được tính **từ dữ liệu**; vì file lưu chính mảng này, chạy lại chương trình vẫn ra id đúng.
+- **S4** kiểm tra cả lỗi lẫn "mảng đầu vào không đổi" – nền móng của "lỗi thì không lưu".
+- Dùng `?.` ở S2, S3 (`result?.ticket.id`): stub trả `undefined` → test đỏ bằng `AssertionError`, không phải `TypeError` ở dòng test (bài học Bước 26).
+
+### How
+
+```js
+const NOW = new Date('2026-10-21T08:00:00.000Z');
+
+test('S1: the first ticket gets id 1 and is returned with a new list containing it', () => {
+  const expected = buildTicket({ title: 'First' }, { id: 1, now: NOW });
+  assert.deepEqual(createTicket([], { title: 'First' }, NOW), {
+    tickets: [expected],
+    ticket: expected,
+  });
+});
+
+test('S2: a new id is the highest existing id plus one, even with gaps', () => {
+  const existing = [{ id: 2 }, { id: 9 }, { id: 4 }];
+  assert.equal(createTicket(existing, { title: 'Next' }, NOW)?.ticket.id, 10);
+});
+
+test('S3: creating twice in a row on the returned list gives ids 1 and 2', () => {
+  const first = createTicket([], { title: 'One' }, NOW);
+  const second = createTicket(first?.tickets, { title: 'Two' }, NOW);
+  assert.deepEqual(second?.tickets.map((ticket) => ticket.id), [1, 2]);
+});
+
+test('S4: invalid input throws and leaves the given list unchanged', () => {
+  const existing = [buildTicket({ title: 'Keep me' }, { id: 1, now: NOW })];
+  const snapshot = structuredClone(existing);
+  assert.throws(() => createTicket(existing, { title: '   ' }, NOW), {
+    name: 'ValidationError',
+    code: 'EMPTY_TITLE',
+  });
+  assert.deepEqual(existing, snapshot);
+});
+```
+
+```
+✖ S1 · ✖ S2 · ✖ S3 · ✖ S4   – đều AssertionError
+ℹ tests 32 · pass 28 · fail 4
+```
+
+### Kết quả / Ghi chú
+
+- ✅ Đỏ đúng lý do; 28 test models vẫn xanh.
+- Commit đề xuất: `test(services): add failing tests for creating a ticket`.
