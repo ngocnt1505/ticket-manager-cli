@@ -2253,3 +2253,63 @@ test('D6: Vietnamese text and emoji survive serialize then parse', () => {
 
 - ✅ Đỏ đúng lý do; 49 test cũ vẫn xanh.
 - Commit đề xuất: `test(storage): add failing tests for parsing and serializing tickets`.
+
+> **Cập nhật Bước 41:** Ngọc commit `3e28ed8 test(storage): add failing tests for parsing and serializing tickets`.
+
+---
+
+## Bước 42 – Vòng 10: bước Green (`StorageError`, `parseTickets`, `serializeTickets`)
+
+**Thời gian:** 2026-10-21 · **Người làm:** Claude viết code (theo yêu cầu); Ngọc review và commit · **Commit:** chưa
+
+### What
+
+- `src/errors.js`: thêm `StorageError` (kế thừa `TicketError` – nhờ refactor Bước 38 chỉ cần **một dòng**).
+- `src/storage/jsonStore.js`: viết `parseTickets`, `serializeTickets`.
+- Đánh dấu `[x]` D1–D6; ghi mục Phát sinh **P3**.
+
+### Why
+
+- **`try/catch` quanh `JSON.parse`**: bọc `SyntaxError` của Node thành `StorageError('CORRUPTED_FILE')` có đường dẫn file và **cách khắc phục** ("Fix or remove it and try again") – người dùng không thấy lỗi kỹ thuật thô.
+- **Kiểm tra `Array.isArray` sau khi parse**: `{}`, `null`, `42` là JSON hợp lệ nhưng không dùng được.
+- `serializeTickets` = `JSON.stringify(…, null, 2) + '\n'`: `JSON.stringify` giữ nguyên ký tự Unicode (không đổi thành `\uXXXX`) → tiếng Việt đọc được trong file.
+
+### How
+
+```js
+function parseTickets(text, filePath) {
+  if (text.trim() === '') return [];
+  let data;
+  try {
+    data = JSON.parse(text);
+  } catch (err) {
+    throw new StorageError(
+      'CORRUPTED_FILE',
+      `Ticket file ${filePath} is not valid JSON (${err.message}). Fix or remove it and try again.`,
+    );
+  }
+  if (!Array.isArray(data)) {
+    throw new StorageError(
+      'CORRUPTED_FILE',
+      `Ticket file ${filePath} must contain a JSON array of tickets. Fix or remove it and try again.`,
+    );
+  }
+  return data;
+}
+
+function serializeTickets(tickets) {
+  return `${JSON.stringify(tickets, null, 2)}\n`;
+}
+```
+
+```
+ℹ tests 55 · pass 55 · fail 0   (exit 0)
+```
+
+**Mutation thủ công:** bỏ `Array.isArray` → ✖ D4 · bỏ xử lý file rỗng → ✖ D2 · bỏ thụt lề → ✖ D5 · bỏ đường dẫn khỏi thông báo → ✖ D3.
+
+### Kết quả / Ghi chú
+
+- ✅ D1–D6 xanh.
+- **P3 (Phát sinh, chờ quyết định):** file là mảng nhưng phần tử hỏng (`[1]`, `[null]`, thiếu `id`, `id` trùng) hiện **lọt qua** `parseTickets` → lỗi xuất hiện muộn và khó hiểu (ví dụ `create` sinh id `NaN`, `update` sửa nhầm khi id trùng). Cân nhắc: chỉ kiểm tra `id` (thứ cả chương trình dựa vào), không kiểm tra mọi trường – tránh over-testing (Report §6.1).
+- Commit đề xuất: `feat(storage): parse and serialize the ticket file`.

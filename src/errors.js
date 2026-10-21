@@ -1,5 +1,5 @@
 // Every expected failure carries a stable `code`; `name` tells the kind of failure
-// (the CLI will map ValidationError → exit 2, NotFoundError → exit 1).
+// (the CLI will map ValidationError → exit 2, NotFoundError and StorageError → exit 1).
 class TicketError extends Error {
   constructor(code, message) {
     super(message);
@@ -12,4 +12,6 @@ class ValidationError extends TicketError {}
 
 class NotFoundError extends TicketError {}
 
-module.exports = { TicketError, ValidationError, NotFoundError };
+class StorageError extends TicketError {}
+
+module.exports = { TicketError, ValidationError, NotFoundError, StorageError };

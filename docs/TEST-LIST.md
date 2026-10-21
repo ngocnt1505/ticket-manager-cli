@@ -99,12 +99,12 @@ Service nhận mảng tickets và trả về mảng **mới**; "không lưu" ở
 
 ### Hàm thuần (U)
 
-- [ ] **D1** `parseTickets`: mảng JSON hợp lệ → mảng ticket *(W1)*
-- [ ] **D2** `parseTickets`: chuỗi rỗng hoặc chỉ khoảng trắng → `[]` *(mới)*
-- [ ] **D3** `parseTickets`: JSON cắt ngang (`'[{"id":1,'`) → lỗi `CORRUPTED_FILE`, thông báo có đường dẫn file *(W1)*
-- [ ] **D4** `parseTickets`: JSON hợp lệ nhưng không phải mảng (`{}`, `null`, `42`) → `CORRUPTED_FILE` *(W1)*
-- [ ] **D5** `serializeTickets`: ra JSON thụt lề 2 dấu cách, kết thúc bằng xuống dòng *(mới)*
-- [ ] **D6** `serializeTickets` → `parseTickets` giữ nguyên tiếng Việt có dấu và emoji *(W1)*
+- [x] **D1** `parseTickets`: mảng JSON hợp lệ → mảng ticket *(W1)*
+- [x] **D2** `parseTickets`: chuỗi rỗng hoặc chỉ khoảng trắng → `[]` *(mới)*
+- [x] **D3** `parseTickets`: JSON cắt ngang (`'[{"id":1,'`) → lỗi `CORRUPTED_FILE`, thông báo có đường dẫn file *(W1)*
+- [x] **D4** `parseTickets`: JSON hợp lệ nhưng không phải mảng (`{}`, `null`, `42`) → `CORRUPTED_FILE` *(W1)*
+- [x] **D5** `serializeTickets`: ra JSON thụt lề 2 dấu cách, kết thúc bằng xuống dòng *(mới)*
+- [x] **D6** `serializeTickets` → `parseTickets` giữ nguyên tiếng Việt có dấu và emoji *(W1)*
 
 ### Đọc/ghi file thật (I)
 
@@ -151,3 +151,4 @@ Trường hợp nghĩ ra trong lúc làm – thêm vào đây trước, làm sau
 
 - [x] **P1** Tags không phải chuỗi (`null`, `42`, `{}`, `['bug']`) → lỗi `INVALID_TAG` thay vì `TypeError`. *(nghĩ ra ở vòng 4; Ngọc quyết định **làm** – để mọi dữ liệu sai đều ra lỗi có `code`, nhất quán với title/description)*
 - [x] **P2** `createTicket` thành công **không sửa mảng đầu vào** (trả mảng mới) – theo `DECISIONS.md` §9. *(phát hiện ở vòng 6 bằng mutation: đổi thành `tickets.push(ticket)` mà 32/32 vẫn xanh; Ngọc quyết định **làm ngay**)*
+- [ ] **P3** File là mảng nhưng **phần tử hỏng** (`[1]`, `[null]`, ticket thiếu `id`, `id` trùng) → `CORRUPTED_FILE` thay vì lỗi khó hiểu ở bước sau (ví dụ `create` sinh id `NaN`). *(nghĩ ra ở vòng 10; chờ Ngọc quyết định – lưu ý: kiểm tra quá kỹ từng trường là over-testing, Report §6.1)*
