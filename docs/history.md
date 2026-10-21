@@ -1197,3 +1197,68 @@ test('M20: accepts a 30-character tag and rejects 31 with INVALID_TAG', () => {
 - ✅ Đỏ đúng lý do; 14 test cũ vẫn xanh.
 - `TEST-LIST.md` có mục Phát sinh đầu tiên: **P1** (tags không phải chuỗi) – chờ Ngọc quyết định.
 - Commit đề xuất: `test(models): add failing tests for tags`.
+
+> **Cập nhật Bước 22:** Ngọc commit `3797486 test(models): add failing tests for tags`.
+
+---
+
+## Bước 23 – Vòng 4: bước Green (`normalizeTags`)
+
+**Thời gian:** 2026-10-21 · **Người làm:** Claude viết code (theo yêu cầu); Ngọc review và commit · **Commit:** chưa
+
+### What
+
+Viết `normalizeTags` và hằng `MAX_TAG_LENGTH = 30`; đánh dấu `[x]` M15–M20.
+
+### Why
+
+- Viết thành **chuỗi các bước** (`split` → `map` trim + chữ thường → `filter` bỏ rỗng → kiểm tra độ dài → `Set` bỏ trùng), mỗi bước ứng với một quy tắc trong `DECISIONS.md` §4 → đọc code là thấy đặc tả.
+- **Trim trước, lọc rỗng sau**: `' , ,'` tách ra `[' ', ' ', '']`; phải trim xong mới thấy chúng rỗng.
+- **Chữ thường trước khi bỏ trùng**: `'Bug'` và `'bug'` chỉ trùng nhau sau khi đổi chữ thường.
+- **`new Set(...)` giữ thứ tự xuất hiện đầu tiên** (đặc tính của `Set` trong JavaScript) → đáp ứng M17 mà không cần code sắp xếp.
+- Không xử lý tags không phải chuỗi – đó là **P1** trong mục Phát sinh, chưa được quyết định làm. Viết thêm lúc này là code không có test.
+
+### How
+
+```js
+const MAX_TAG_LENGTH = 30;
+
+function normalizeTags(tags) {
+  if (tags === undefined) return [];
+  const clean = tags
+    .split(',')
+    .map((tag) => tag.trim().toLowerCase())
+    .filter((tag) => tag !== '');
+  for (const tag of clean) {
+    if (tag.length > MAX_TAG_LENGTH) {
+      throw new ValidationError(
+        'INVALID_TAG',
+        `Tag "${tag}" must be at most ${MAX_TAG_LENGTH} characters`,
+      );
+    }
+  }
+  return [...new Set(clean)];
+}
+```
+
+```
+ℹ tests 20 · pass 20 · fail 0   (exit 0)
+```
+
+**Mutation thủ công** – bỏ từng bước chuẩn hóa, mỗi lần đều có test đỏ:
+
+| Mutation | Test đỏ |
+|---|---|
+| Bỏ `.toLowerCase()` | M17, M19 |
+| Bỏ `new Set` (không bỏ trùng) | M17 |
+| Bỏ `.filter(...)` (giữ tag rỗng) | M16, M18 |
+| `>` → `>=` (chặn oan tag 30 ký tự) | M20 |
+| Bỏ `.trim()` | M15, M18 |
+
+### Kết quả / Ghi chú
+
+- ✅ **Vòng 4 (M15–M20) hoàn tất** sau commit này. `TEST-LIST.md`: 20/77.
+- Hệ quả có sẵn cho sau này: `--tags=` (chuỗi rỗng) → `[]` (M18) → dùng để **xóa hết tag** khi update (`DECISIONS.md` §5).
+- Refactor: không cần – hàm ngắn, mỗi bước một dòng.
+- Commit đề xuất: `feat(models): normalize tags`.
+- Tiếp theo: **vòng 5 – tạo và cập nhật ticket (M21–M27)**, vòng cuối của 4.1. Trước vòng này cần quyết định **P1**.

@@ -38,12 +38,12 @@ Danh sách kịch bản cần test, viết **trước khi code** (Canon TDD, Rep
 
 ### Tags
 
-- [ ] **M15** Tách chuỗi theo dấu phẩy và trim: `'bug, ui'` → `['bug', 'ui']` *(mới)*
-- [ ] **M16** Bỏ tag rỗng: `'bug,,ui,'` → `['bug', 'ui']` *(mới)*
-- [ ] **M17** Chuyển chữ thường và bỏ trùng: `'Bug,bug,UI'` → `['bug', 'ui']` *(mới)*
-- [ ] **M18** Không có tags hoặc chỉ toàn dấu phẩy/khoảng trắng → `[]` *(mới)*
-- [ ] **M19** Giữ tiếng Việt: `'Giao diện'` → `['giao diện']` *(mới)*
-- [ ] **M20** Tag 30 ký tự hợp lệ, 31 ký tự → lỗi `INVALID_TAG` *(mới, biên)*
+- [x] **M15** Tách chuỗi theo dấu phẩy và trim: `'bug, ui'` → `['bug', 'ui']` *(mới)*
+- [x] **M16** Bỏ tag rỗng: `'bug,,ui,'` → `['bug', 'ui']` *(mới)*
+- [x] **M17** Chuyển chữ thường và bỏ trùng: `'Bug,bug,UI'` → `['bug', 'ui']` *(mới)*
+- [x] **M18** Không có tags hoặc chỉ toàn dấu phẩy/khoảng trắng → `[]` *(mới)*
+- [x] **M19** Giữ tiếng Việt: `'Giao diện'` → `['giao diện']` *(mới)*
+- [x] **M20** Tag 30 ký tự hợp lệ, 31 ký tự → lỗi `INVALID_TAG` *(mới, biên)*
 
 ### Tạo và cập nhật một ticket (hàm thuần)
 

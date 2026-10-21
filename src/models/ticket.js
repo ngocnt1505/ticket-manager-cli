@@ -2,6 +2,7 @@ const { ValidationError } = require('../errors');
 
 const MAX_TITLE_LENGTH = 100;
 const MAX_DESCRIPTION_LENGTH = 1000;
+const MAX_TAG_LENGTH = 30;
 const STATUSES = ['open', 'in_progress', 'done'];
 const PRIORITIES = ['low', 'medium', 'high'];
 
@@ -54,7 +55,22 @@ function validateDescription(description) {
   return clean;
 }
 
-function normalizeTags(tags) {}
+function normalizeTags(tags) {
+  if (tags === undefined) return [];
+  const clean = tags
+    .split(',')
+    .map((tag) => tag.trim().toLowerCase())
+    .filter((tag) => tag !== '');
+  for (const tag of clean) {
+    if (tag.length > MAX_TAG_LENGTH) {
+      throw new ValidationError(
+        'INVALID_TAG',
+        `Tag "${tag}" must be at most ${MAX_TAG_LENGTH} characters`,
+      );
+    }
+  }
+  return [...new Set(clean)];
+}
 
 module.exports = {
   STATUSES,
