@@ -57,14 +57,16 @@ Danh sách kịch bản cần test, viết **trước khi code** (Canon TDD, Rep
 
 ---
 
-## 2. Services – logic trên dữ liệu (U, chưa đụng file)
+## 2. Services – hàm thuần trên mảng (U, chưa đụng file)
+
+Service nhận mảng tickets và trả về mảng **mới**; "không lưu" ở đây nghĩa là **mảng đầu vào không bị đổi và không có mảng mới nào được trả về** (xem `DECISIONS.md` §9).
 
 ### create
 
-- [ ] **S1** Ticket đầu tiên có id 1 và được lưu *(W1)*
+- [ ] **S1** Ticket đầu tiên có id 1; kết quả gồm ticket mới và mảng mới chứa nó *(W1)*
 - [ ] **S2** Id mới = id lớn nhất + 1, kể cả khi có lỗ hổng (`[2, 9, 4]` → `10`) *(W1)*
-- [ ] **S3** Id vẫn đúng sau khi "chạy lại chương trình" (tạo service mới trên cùng dữ liệu) *(W1)*
-- [ ] **S4** Input sai → báo lỗi và **không lưu gì** *(W1)*
+- [ ] **S3** Tạo liên tiếp trên mảng vừa trả về → id 1, 2 (id tính từ dữ liệu, không có bộ đếm riêng → vẫn đúng sau khi chạy lại chương trình) *(W1)*
+- [ ] **S4** Input sai → báo lỗi, mảng đầu vào không đổi *(W1)*
 
 ### list
 
@@ -88,8 +90,8 @@ Danh sách kịch bản cần test, viết **trước khi code** (Canon TDD, Rep
 - [ ] **S16** Đổi status → lưu lại, `updatedAt` mới, `createdAt` giữ nguyên *(W1)*
 - [ ] **S17** `--tags` thay thế toàn bộ tag cũ *(mới)*
 - [ ] **S18** Các ticket khác không bị ảnh hưởng *(mới)*
-- [ ] **S19** Id không tồn tại → lỗi `NOT_FOUND` và **không lưu** *(W1)*
-- [ ] **S20** Giá trị sai → lỗi và **không lưu** *(W1)*
+- [ ] **S19** Id không tồn tại → lỗi `NOT_FOUND`, mảng đầu vào không đổi *(W1)*
+- [ ] **S20** Giá trị sai → lỗi, mảng đầu vào không đổi *(W1)*
 
 ---
 

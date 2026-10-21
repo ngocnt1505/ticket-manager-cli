@@ -101,6 +101,23 @@ Chốt trước khi viết code (Giai đoạn 2). Mọi test và code phải kh�
 - Mỗi lỗi có `code` cố định (ví dụ `EMPTY_TITLE`, `NOT_FOUND`); test kiểm tra `code`, không kiểm tra câu chữ. — W1 (Report Mã 3)
 - Id hợp lệ: chỉ gồm chữ số, không bắt đầu bằng 0, lớn hơn 0. `abc`, `0`, `-1`, `1.5`, `12abc`, `1e2` → exit 2. — W1
 
+## 9. Kiến trúc tầng service
+
+| Quyết định | Nguồn |
+|---|---|
+| Service là **các hàm thuần trên mảng**: nhận mảng tickets, trả về **mảng mới** (không sửa mảng đầu vào), không đọc/ghi file | Ngọc (chọn giữa: hàm thuần trên mảng / service object + repository) |
+| Tầng CLI làm việc với file: `load` → gọi service → `save` | Ngọc |
+| Lỗi → service ném lỗi **trước khi** trả về mảng mới → CLI không tới bước `save` → file giữ nguyên | Ngọc |
+
+```js
+createTicket(tickets, input, now)        → { tickets, ticket }
+listTickets(tickets, filters)            → tickets[]
+findTicket(tickets, id)                  → ticket   (không thấy → NOT_FOUND)
+updateTicket(tickets, id, changes, now)  → { tickets, ticket }
+```
+
+**Lý do:** đúng tinh thần "logic trên mảng" của kế hoạch và Report tuần 1 §4.1; unit test không cần bản giả nào; "lỗi thì không lưu" được bảo đảm bởi cấu trúc code chứ không phải bởi việc nhớ kiểm tra.
+
 ---
 
 ## Trạng thái
