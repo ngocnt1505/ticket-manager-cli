@@ -151,4 +151,4 @@ Trường hợp nghĩ ra trong lúc làm – thêm vào đây trước, làm sau
 
 - [x] **P1** Tags không phải chuỗi (`null`, `42`, `{}`, `['bug']`) → lỗi `INVALID_TAG` thay vì `TypeError`. *(nghĩ ra ở vòng 4; Ngọc quyết định **làm** – để mọi dữ liệu sai đều ra lỗi có `code`, nhất quán với title/description)*
 - [x] **P2** `createTicket` thành công **không sửa mảng đầu vào** (trả mảng mới) – theo `DECISIONS.md` §9. *(phát hiện ở vòng 6 bằng mutation: đổi thành `tickets.push(ticket)` mà 32/32 vẫn xanh; Ngọc quyết định **làm ngay**)*
-- [ ] **P3** File là mảng nhưng **phần tử hỏng** (`[1]`, `[null]`, ticket thiếu `id`, `id` trùng) → `CORRUPTED_FILE` thay vì lỗi khó hiểu ở bước sau (ví dụ `create` sinh id `NaN`). *(nghĩ ra ở vòng 10; Ngọc quyết định **làm, chỉ kiểm tra `id`** – không kiểm tra các trường khác để tránh over-testing, Report §6.1)*
+- [x] **P3** File là mảng nhưng **phần tử hỏng** (`[1]`, `[null]`, ticket thiếu `id`, `id` trùng) → `CORRUPTED_FILE` thay vì lỗi khó hiểu ở bước sau (ví dụ `create` sinh id `NaN`). *(nghĩ ra ở vòng 10; Ngọc quyết định **làm, chỉ kiểm tra `id`** – không kiểm tra các trường khác để tránh over-testing, Report §6.1)*

@@ -2352,3 +2352,55 @@ test('P3: entries without a unique positive integer id fail with CORRUPTED_FILE'
 
 - ✅ Đỏ đúng lý do; thông báo chỉ rõ giá trị đầu tiên lọt qua (`[1]`).
 - Commit đề xuất: `test(storage): add failing test for entries without a valid id`.
+
+> **Cập nhật Bước 43:** Ngọc commit `ec68fd4 test(storage): add failing test for entries without a valid id`.
+
+---
+
+## Bước 44 – P3: bước Green (kiểm tra `id` từng phần tử)
+
+**Thời gian:** 2026-10-21 · **Người làm:** Claude viết code (theo yêu cầu); Ngọc review và commit · **Commit:** chưa
+
+### What
+
+Thêm vòng kiểm tra `id` vào cuối `parseTickets`; đánh dấu `[x] P3`.
+
+### How
+
+```js
+  // Only ids are checked: the whole program relies on them (next id, find, update).
+  const seen = new Set();
+  for (const ticket of data) {
+    const id = ticket?.id;
+    if (!Number.isInteger(id) || id < 1 || seen.has(id)) {
+      throw new StorageError(
+        'CORRUPTED_FILE',
+        `Ticket file ${filePath} has a ticket without a unique positive id. Fix or remove it and try again.`,
+      );
+    }
+    seen.add(id);
+  }
+  return data;
+```
+
+- `ticket?.id`: `[1]`, `[null]` không có thuộc tính `id` → `undefined` → không phải số nguyên → lỗi (không `TypeError`).
+- `Number.isInteger` loại cả `"1"` (chuỗi), `1.5`, `NaN`.
+- `Set` để phát hiện id trùng trong một lần duyệt.
+
+```
+ℹ tests 56 · pass 56 · fail 0   (exit 0)
+```
+
+**Mutation thủ công** – mỗi điều kiện có một giá trị thử bắt được, và thông báo chỉ đúng giá trị đó:
+
+| Mutation | Thông báo khi đỏ |
+|---|---|
+| Bỏ kiểm tra trùng | `Missing expected exception (StorageError): [{"id":1},{"id":1}]` |
+| Cho phép id `0` | `… : [{"id":0}]` |
+| Chỉ kiểm tra "có id" thay vì "là số nguyên" | `… : [{"id":"1"}]` |
+
+### Kết quả / Ghi chú
+
+- ✅ P3 hoàn tất – mục Phát sinh thứ ba. File hỏng ở **bất kỳ** mức nào (cú pháp, không phải mảng, id hỏng) đều bị chặn ngay khi đọc, với cùng một mã `CORRUPTED_FILE`.
+- Commit đề xuất: `feat(storage): reject entries without a unique positive id`.
+- Tiếp theo: **vòng 11 – `load` / `save` với file thật (D7–D12)**.

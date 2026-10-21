@@ -19,6 +19,18 @@ function parseTickets(text, filePath) {
       `Ticket file ${filePath} must contain a JSON array of tickets. Fix or remove it and try again.`,
     );
   }
+  // Only ids are checked: the whole program relies on them (next id, find, update).
+  const seen = new Set();
+  for (const ticket of data) {
+    const id = ticket?.id;
+    if (!Number.isInteger(id) || id < 1 || seen.has(id)) {
+      throw new StorageError(
+        'CORRUPTED_FILE',
+        `Ticket file ${filePath} has a ticket without a unique positive id. Fix or remove it and try again.`,
+      );
+    }
+    seen.add(id);
+  }
   return data;
 }
 
