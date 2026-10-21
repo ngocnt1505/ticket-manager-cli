@@ -3125,3 +3125,52 @@ const TICKET_OPTIONS = {
 - ✅ Refactor thứ tư của dự án; hành vi không đổi.
 - Commit đề xuất: `refactor(cli): share ticket options between create and update`.
 - Tiếp theo: **vòng 15 – `bin/tickets.js` và chạy CLI thật bằng `spawnSync` (C11–C18)**.
+
+> **Cập nhật Bước 55:** Ngọc commit và push `38a308e refactor(cli): share ticket options between create and update`.
+
+---
+
+## Bước 56 – Vòng 15 (chạy CLI thật bằng `spawnSync` – C11–C18): bước Red
+
+**Thời gian:** 2026-10-21 · **Người làm:** Claude viết test + stub (theo yêu cầu); Ngọc review và commit · **Commit:** chưa
+
+### What
+
+- `test/integration/cli.test.js`: 8 integration test chạy **chương trình thật** `node bin/tickets.js …` thành một tiến trình riêng, với file dữ liệu thật trong thư mục tạm.
+- Stub `bin/tickets.js`: chỉ có dòng `#!/usr/bin/env node` (chạy xong thoát 0, không làm gì).
+
+### Why
+
+- Test ở vòng 12–14 gọi `run()` trong cùng tiến trình với `store` giả → **chưa kiểm tra phần "dây nối"**: `bin/tickets.js` có tồn tại không, có đọc `TICKETS_FILE` không, exit code có thật sự tới hệ điều hành không, lỗi có lộ **stack trace** không, file thật có được ghi đúng không. `spawnSync` kiểm tra đúng như người dùng / script gặp.
+- Chạy bằng `process.execPath` (đường dẫn Node đang chạy test) → không phụ thuộc `PATH` hay `npm link`.
+- Mỗi lần khởi động tiến trình tốn ~60–150 ms → chỉ 8 test, gom nhiều lệnh vào một test (C15, C16) – đúng kim tự tháp test: đỉnh ít và chậm.
+- **Nội dung các test:**
+
+| Test | Kiểm tra |
+|---|---|
+| C11 | stdout **chính xác** kèm `\n`, tiếng Việt qua pipe, file thật có priority/tags đúng |
+| C12 | `list --status open --tags bug` – có ticket khác status, khác tag để chứng minh lọc thật |
+| C13 | `show 1` → 0; `show 99` → 1, stdout rỗng |
+| C14 | `update` ghi xuống file thật |
+| C15 | 5 dòng lệnh sai (lệnh lạ, không có lệnh, thiếu id, id sai, option lạ) → exit 2, stderr bắt đầu `Error: `, **không stack trace** |
+| C16 | file hỏng với 3 lệnh → exit 1, thông báo có **đường dẫn file**, không stack trace, file **không bị ghi đè** (so từng byte) |
+| C17 | **xóa `TICKETS_FILE` khỏi môi trường** → dữ liệu vào `tickets.json` ở thư mục hiện tại (xóa có chủ đích: máy người chạy test có thể đã đặt biến này) |
+| C18 | `TICKETS_FILE` trong thư mục không tồn tại → exit 1, không tạo thư mục |
+
+- Nhận diện stack trace bằng regex `/\n\s+at\s/` (dòng dạng `    at Module._compile …`).
+
+### How
+
+```
+✖ C11–C18   (stub thoát 0, không in gì)
+ℹ tests 82 · pass 74 · fail 8 · duration ~4.3 s
+```
+
+Lý do đỏ: 7 test là `AssertionError`; **C14** là `ENOENT` ở dòng test `readTickets()` – stub thoát 0 nên assertion đầu qua, nhưng **không ghi file** → đọc file thất bại. Lỗi nằm ở code test, ý nghĩa vẫn là "file chưa được cập nhật" (giống trường hợp M22, Bước 26) → chấp nhận là đỏ đúng lý do.
+
+Sau khi chạy: **0** thư mục `tickets-test-*` sót lại.
+
+### Kết quả / Ghi chú
+
+- ✅ Đỏ đúng lý do; 74 test cũ vẫn xanh.
+- Commit đề xuất: `test(cli): add failing end-to-end tests that run the real program`.
