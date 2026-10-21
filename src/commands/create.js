@@ -1,14 +1,9 @@
 const { createTicket } = require('../services/ticketService');
 const { UsageError } = require('../errors');
+const { TICKET_OPTIONS } = require('./ticketOptions');
 
 module.exports = {
-  options: {
-    title: { type: 'string' },
-    description: { type: 'string' },
-    status: { type: 'string' },
-    priority: { type: 'string' },
-    tags: { type: 'string' },
-  },
+  options: TICKET_OPTIONS,
 
   execute({ values }, { store, now, print }) {
     if (values.title === undefined) {

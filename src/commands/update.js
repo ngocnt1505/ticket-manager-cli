@@ -1,14 +1,7 @@
 const { updateTicket } = require('../services/ticketService');
 const { UsageError } = require('../errors');
 const { parseId } = require('./parseId');
-
-const options = {
-  title: { type: 'string' },
-  description: { type: 'string' },
-  status: { type: 'string' },
-  priority: { type: 'string' },
-  tags: { type: 'string' },
-};
+const { TICKET_OPTIONS } = require('./ticketOptions');
 
 function formatValue(value) {
   if (Array.isArray(value)) return value.length > 0 ? value.join(', ') : '(none)';
@@ -16,13 +9,13 @@ function formatValue(value) {
 }
 
 module.exports = {
-  options,
+  options: TICKET_OPTIONS,
 
   execute({ values, positionals }, { store, now, print }) {
     const id = parseId(positionals[0]);
     const fields = Object.keys(values);
     if (fields.length === 0) {
-      const flags = Object.keys(options).map((name) => `--${name}`);
+      const flags = Object.keys(TICKET_OPTIONS).map((name) => `--${name}`);
       throw new UsageError('NO_CHANGES', `Nothing to update. Use at least one of ${flags.join(', ')}.`);
     }
     const { tickets, ticket } = updateTicket(store.load(), id, values, now);

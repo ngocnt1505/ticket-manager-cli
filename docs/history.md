@@ -3082,3 +3082,46 @@ if (err instanceof NotFoundError) { … return 1; }
 - ✅ C1–C10 xanh: **phần lệnh với stdout/stderr giả xong**.
 - **Mùi code cho Refactor:** `create.js` và `update.js` khai báo **cùng 5 option** giống hệt nhau → tách ra một chỗ.
 - Commit đề xuất: `feat(cli): add the update command`.
+
+> **Cập nhật Bước 54:** Ngọc commit và push `32ea979 feat(cli): add the update command`. **Vòng 14 hoàn tất.**
+
+---
+
+## Bước 55 – Refactor: dùng chung `TICKET_OPTIONS` cho `create` và `update`
+
+**Thời gian:** 2026-10-21 · **Người làm:** Claude (theo yêu cầu); Ngọc review và commit · **Commit:** chưa
+
+### What
+
+Tạo `src/commands/ticketOptions.js` chứa 5 option (`title`, `description`, `status`, `priority`, `tags`); `create.js` và `update.js` dùng chung. Không sửa test.
+
+### Why
+
+- Hai lệnh khai báo **cùng 5 option giống hệt** → thêm trường mới phải sửa hai nơi, dễ quên một nơi (ví dụ `create` có `--assignee` mà `update` không).
+- **Không gộp `list`**: 3 option của `list` là **bộ lọc** – trùng tên nhưng khác ý nghĩa (`--tags` ở `list` = "có tất cả các tag này", ở `update` = "thay toàn bộ tag"). Gộp chỉ vì giống chữ là trừu tượng hóa sai.
+
+### How
+
+```js
+// src/commands/ticketOptions.js
+// The editable ticket fields as command-line options, shared by `create` and `update`.
+const TICKET_OPTIONS = {
+  title: { type: 'string' },
+  description: { type: 'string' },
+  status: { type: 'string' },
+  priority: { type: 'string' },
+  tags: { type: 'string' },
+};
+```
+
+| Kiểm tra | Kết quả |
+|---|---|
+| Khai báo `type: 'string'` còn ở đâu | `ticketOptions.js` (5), `list.js` (3 – bộ lọc, cố ý giữ) |
+| 5 file test có bị sửa không (checksum) | cả 5 `OK` |
+| `npm test` | `tests 74 · pass 74 · fail 0` |
+
+### Kết quả / Ghi chú
+
+- ✅ Refactor thứ tư của dự án; hành vi không đổi.
+- Commit đề xuất: `refactor(cli): share ticket options between create and update`.
+- Tiếp theo: **vòng 15 – `bin/tickets.js` và chạy CLI thật bằng `spawnSync` (C11–C18)**.
