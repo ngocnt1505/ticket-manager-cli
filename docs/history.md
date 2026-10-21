@@ -3274,3 +3274,56 @@ TypeError: command.execute is not a function
 - ✅ C11–C18 xanh. **Toàn bộ 77 mục của test list + P1–P5 đã xong.**
 - Bài học: test tự động và chạy tay bổ trợ nhau – mutation kiểm tra test có bắt được lỗi **đã nghĩ tới**; chạy tay với input "lạ" tìm ra lỗi **chưa nghĩ tới**.
 - Commit đề xuất: `feat(cli): add the tickets executable`.
+
+> **Cập nhật Bước 57:** Ngọc commit và push `15a0db6 feat(cli): add the tickets executable`. **Vòng 15 hoàn tất.**
+
+---
+
+## Bước 58 – P6 (lệnh trùng tên thuộc tính có sẵn, lỗi bất ngờ): Ngọc quyết định làm; bước Red
+
+**Thời gian:** 2026-10-21 · **Người làm:** Ngọc quyết định; Claude viết test (theo yêu cầu); Ngọc review và commit · **Commit:** chưa
+
+### What
+
+Thêm 2 unit test vào `test/unit/cli.test.js`:
+
+- **P6a**: `toString`, `constructor`, `hasOwnProperty` → lệnh lạ, exit 2.
+- **P6b**: lỗi bất ngờ (store giả ném `Error('disk on fire')`) → exit 1, stderr **đúng một dòng** `Unexpected error: disk on fire`.
+
+### Why
+
+- **P6a** là lỗi thật tìm được khi chạy tay (Bước 57). Thử 3 tên: đều là thuộc tính mà **mọi object JavaScript** có sẵn.
+- **P6b** – không cần tìm một bug thật để kiểm tra nhánh "lỗi bất ngờ": dùng `store` giả ném một `Error` thường (không phải `TicketError`) – đúng loại lỗi mà một bug sinh ra. `deepEqual(err, [...])` khẳng định stderr chỉ có **một dòng ngắn**, không có dòng stack trace nào.
+- "Không in stack trace" là yêu cầu trong kế hoạch 4.4 của Ngọc: người dùng cuối không cần và không hiểu stack trace; script đọc stderr cũng không muốn rác.
+
+### How
+
+```js
+test('P6a: names of built-in object properties are unknown commands, not crashes', () => {
+  const { exec } = cli();
+  for (const name of ['toString', 'constructor', 'hasOwnProperty']) {
+    const r = exec(name);
+    assert.equal(r.code, 2, name);
+    assert.match(r.stderr, new RegExp(`Unknown command "${name}"`), name);
+  }
+});
+
+test('P6b: an unexpected error exits 1 with a short message and no stack trace', () => {
+  const store = { load() { throw new Error('disk on fire'); } };
+  const err = [];
+  const code = run(['list'], { store, now: () => NOW, stdout: () => {}, stderr: (line) => err.push(line) });
+  assert.equal(code, 1);
+  assert.deepEqual(err, ['Unexpected error: disk on fire']);
+});
+```
+
+```
+✖ P6a  TypeError: command.execute is not a function
+✖ P6b  Error: disk on fire
+ℹ tests 84 · pass 82 · fail 2
+```
+
+### Kết quả / Ghi chú
+
+- ✅ Đỏ đúng lý do: cả hai test đỏ vì **`run` ném lỗi ra ngoài** thay vì trả về exit code – đó chính là hành vi cần sửa ("`run` không bao giờ được văng lỗi"). Lỗi ném ra là lỗi thật của code sản phẩm (khác M22/C14, nơi lỗi nằm ở dòng test).
+- Commit đề xuất: `test(cli): add failing tests for unexpected errors and built-in names`.

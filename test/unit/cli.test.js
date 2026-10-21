@@ -150,3 +150,24 @@ test('C8: invalid values exit 2 with a helpful message and save nothing', () => 
   }
   assert.equal(store.saves, savesBefore);
 });
+
+test('P6a: names of built-in object properties are unknown commands, not crashes', () => {
+  const { exec } = cli();
+  for (const name of ['toString', 'constructor', 'hasOwnProperty']) {
+    const r = exec(name);
+    assert.equal(r.code, 2, name);
+    assert.match(r.stderr, new RegExp(`Unknown command "${name}"`), name);
+  }
+});
+
+test('P6b: an unexpected error exits 1 with a short message and no stack trace', () => {
+  const store = {
+    load() {
+      throw new Error('disk on fire');
+    },
+  };
+  const err = [];
+  const code = run(['list'], { store, now: () => NOW, stdout: () => {}, stderr: (line) => err.push(line) });
+  assert.equal(code, 1);
+  assert.deepEqual(err, ['Unexpected error: disk on fire']);
+});
