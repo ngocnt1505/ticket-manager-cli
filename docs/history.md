@@ -762,3 +762,59 @@ function validateTitle(title) {
 
 - ✅ Nhóm **Title (M1–M6) hoàn tất**. `TEST-LIST.md`: 6/77.
 - Bước tiếp theo: **Refactor đầu tiên** – số `100` xuất hiện 2 lần (điều kiện và câu thông báo), đặt tên thành hằng `MAX_TITLE_LENGTH`.
+
+> **Cập nhật Bước 15:** Ngọc commit và push `92681e4 feat(models): reject non-string titles`. **Vòng TDD M6 hoàn tất.**
+
+---
+
+## Bước 16 – Refactor đầu tiên: đặt tên hằng `MAX_TITLE_LENGTH`
+
+**Thời gian:** 2026-10-21 · **Người làm:** Claude (theo yêu cầu); Ngọc review và commit · **Commit:** chưa
+
+### What
+
+Trong `src/models/ticket.js`, thay số `100` (xuất hiện 2 lần: trong điều kiện và trong câu thông báo) bằng hằng `MAX_TITLE_LENGTH = 100`. **Không sửa test.**
+
+### Why
+
+- **"Con số ma" (magic number):** `100` nằm rải rác thì người đọc phải đoán ý nghĩa, và khi đổi giới hạn dễ sửa một chỗ mà quên chỗ kia (điều kiện là 200 nhưng thông báo vẫn nói 100). Đặt tên một lần → một nguồn duy nhất.
+- **Vì sao bây giờ mới refactor:** trước khi có M3/M5 (canh biên), một refactor lỡ tay viết `>=` sẽ không bị phát hiện (Bước 12). Giờ đã có lưới an toàn đủ chặt → mới refactor.
+- **Quy tắc Refactor:** chỉ đổi **cấu trúc**, không đổi **hành vi** → test giữ nguyên và phải xanh nguyên như trước. Commit riêng, không gộp với Green (Kent Beck, Report §6.5).
+- **Vì sao test vẫn viết số `100` chứ không import `MAX_TITLE_LENGTH`:** test là đặc tả độc lập với code. Nếu test dùng chính hằng số của code, ai đó lỡ sửa `MAX_TITLE_LENGTH = 10` thì test vẫn xanh. Test viết thẳng `100` (đúng như `DECISIONS.md`) thì bắt được.
+
+### How
+
+```js
+const { ValidationError } = require('../errors');
+
+const MAX_TITLE_LENGTH = 100;
+
+function validateTitle(title) {
+  if (typeof title !== 'string') {
+    throw new ValidationError('INVALID_TITLE', 'Title must be text');
+  }
+  const clean = title.trim();
+  if (!clean) throw new ValidationError('EMPTY_TITLE', 'Title is required');
+  if (clean.length > MAX_TITLE_LENGTH) {
+    throw new ValidationError(
+      'TITLE_TOO_LONG',
+      `Title must be at most ${MAX_TITLE_LENGTH} characters`,
+    );
+  }
+  return clean;
+}
+```
+
+Chứng minh hành vi không đổi:
+
+| Kiểm tra | Kết quả |
+|---|---|
+| File test có bị sửa không (so checksum trước/sau) | `test/unit/ticket.model.test.js: OK` – không đổi |
+| `npm test` | `tests 6 · pass 6 · fail 0` (exit 0) |
+| Câu thông báo `TITLE_TOO_LONG` | `Title must be at most 100 characters` – giống hệt trước |
+
+### Kết quả / Ghi chú
+
+- ✅ Refactor đầu tiên của dự án. Hoàn tất **vòng 1** của Giai đoạn 4.1 (Title).
+- Commit đề xuất: `refactor(models): extract title length limit`.
+- Tiếp theo: **vòng 2** – status và priority (M7–M10).
