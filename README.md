@@ -209,7 +209,7 @@ Dependencies go one way: commands → services → models; only `bin/tickets.js`
 | [docs/TEST-LIST.md](docs/TEST-LIST.md) | The test list used for TDD, with every scenario checked off |
 | [docs/history.md](docs/history.md) | Step-by-step development log (Vietnamese): each Red → Green → Refactor cycle with real test output and mutation checks |
 | [docs/overvieww2.md](docs/overvieww2.md) | Week 2 assignment |
-| [docs/Report.md](docs/Report.md) | Week 1 research report on TDD (Vietnamese) |
+| [Week 1 report](https://github.com/ngocnt1505/ai-training-week1/blob/main/Report.md) | Week 1 research report on TDD (Vietnamese), kept in the [Week 1 repository](https://github.com/ngocnt1505/ai-training-week1); the docs refer to it as "Report §…" |
 
 The git history shows the TDD cycle: each `test(…)` commit with a failing test comes before the `feat(…)` commit that makes it pass, followed by `refactor(…)` commits where needed.
 

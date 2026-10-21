@@ -11,6 +11,8 @@ File này ghi lại **từng bước** của dự án theo thứ tự thời gia
 
 Cuối dự án, nội dung ở đây sẽ được tổng hợp thành báo cáo Week 2.
 
+> **Tham chiếu:** "Report §…" / "Report tuần 1" là [báo cáo tuần 1](https://github.com/ngocnt1505/ai-training-week1/blob/main/Report.md) ở [repo tuần 1](https://github.com/ngocnt1505/ai-training-week1) (không nằm trong repo này).
+
 ---
 
 ## Bước 0 – Khởi động lại dự án theo kế hoạch 7 giai đoạn
@@ -24,7 +26,7 @@ Cuối dự án, nội dung ở đây sẽ được tổng hợp thành báo cá
 
 ### Why
 
-Trước đó Claude đã tự làm trọn dự án trong một lượt (xem `docs/sosanh.md`). Kết quả chạy được nhưng **không chứng minh được người học kiểm soát AI** – trọng tâm của khóa học ("You are the architect – You design, AI helps implement"). Làm lại để:
+Trước đó Claude đã tự làm trọn dự án trong một lượt (bản so sánh `docs/sosanh.md` đã được xóa khỏi repo trước khi nộp – xem Bước 63). Kết quả chạy được nhưng **không chứng minh được người học kiểm soát AI** – trọng tâm của khóa học ("You are the architect – You design, AI helps implement"). Làm lại để:
 
 - tự viết test, tự chạy, tự commit từng bước Red → Green → Refactor;
 - tự chốt (hoặc hỏi mentor) các quyết định thiết kế;
@@ -220,7 +222,7 @@ Claude đưa 4 câu hỏi cho các điểm còn mở, mỗi câu có 2–3 phư�
 | Tags có chuyển chữ thường khi lưu? | Có / Không | **Có** |
 | `TICKETS_FILE` trỏ vào thư mục chưa tồn tại? | Báo lỗi, không tạo / Tự tạo thư mục | **Báo lỗi, không tạo** |
 
-Các điểm W1 lấy lại từ `docs/Report.md`: title (100 ký tự theo `.length`, phải là chuỗi), exit code 0/1/2, id = max + 1, file chưa có = danh sách rỗng, JSON hỏng không ghi đè, ghi nguyên tử, `TICKETS_FILE`.
+Các điểm W1 lấy lại từ báo cáo tuần 1 (`Report.md`): title (100 ký tự theo `.length`, phải là chuỗi), exit code 0/1/2, id = max + 1, file chưa có = danh sách rỗng, JSON hỏng không ghi đè, ghi nguyên tử, `TICKETS_FILE`.
 
 ### Kết quả / Ghi chú
 
@@ -3525,3 +3527,38 @@ Thực hiện đủ 6 mục kiểm tra của kế hoạch Giai đoạn 6 và ghi
 - ✅ `docs/TEST-RESULTS.md` (237 dòng) – 8 mục: tóm tắt, output `npm test`, coverage, mutation, lỗ hổng, clone sạch, Acceptance Criteria, lịch sử commit.
 - `TEST-LIST.md` thêm **P7**, **P8** (chờ Ngọc quyết định).
 - Commit đề xuất: `docs: add test results and pre-submission checks`.
+
+> **Cập nhật Bước 62:** Ngọc commit và push `aef8963 docs: add test results and pre-submission checks`.
+
+---
+
+## Bước 63 – Dọn tài liệu trước khi nộp: xóa file tuần 1 và `sosanh.md`, trỏ tham chiếu sang repo tuần 1
+
+**Thời gian:** 2026-10-21 · **Người làm:** Ngọc xóa file và chọn cách xử lý tham chiếu; Claude tìm và sửa các chỗ bị ảnh hưởng · **Commit:** chưa
+
+### What
+
+- Ngọc xóa 4 file khỏi `docs/`: `Report.md`, `chat_history.pdf`, `overvieww1.md` (tài liệu tuần 1) và `sosanh.md` (so sánh với lời giải đầu tiên của Claude).
+- Claude tìm mọi chỗ còn tham chiếu tới 4 file này và sửa theo lựa chọn của Ngọc: **trỏ sang repo tuần 1** <https://github.com/ngocnt1505/ai-training-week1> (repo này vẫn có `Report.md`, `chat_history.pdf`, `overview.md`).
+
+### Why
+
+- Repo tuần 2 chỉ nên chứa bài tuần 2; tài liệu tuần 1 đã có repo riêng.
+- Nhưng tài liệu tuần 2 dựa nhiều vào báo cáo tuần 1 (khoảng 40 chỗ "Report §…" trong `DECISIONS.md`, `TEST-LIST.md`, `history.md`) → nếu chỉ xóa file, người đọc không tra được nguồn của các quyết định "W1".
+
+### How
+
+| Chỗ bị ảnh hưởng | Sửa |
+|---|---|
+| `README.md` – link hỏng tới `docs/Report.md` | Link tới `Report.md` trên repo tuần 1 |
+| `docs/README.md` – mục Week 1 trỏ tới 3 file đã xóa, dòng `sosanh.md` | Viết lại mục lục chỉ còn file tuần 2 (thêm `TEST-RESULTS.md`), một dòng trỏ sang repo tuần 1 |
+| `docs/DECISIONS.md` – "W1: đã chốt trong `docs/Report.md`" | Trỏ tới `Report.md` ở repo tuần 1; giải thích "Report §…" là số mục trong báo cáo đó |
+| `docs/TEST-LIST.md`, `docs/history.md` – các tham chiếu "Report §…" | Giữ nguyên số mục; thêm link báo cáo tuần 1 ở đầu file |
+| `docs/history.md` Bước 0 – "(xem `docs/sosanh.md`)" | Ghi rõ file đã được xóa trước khi nộp. Bước 3 ("`sosanh.md` được giữ trong repo") giữ nguyên vì đúng **tại thời điểm đó** – nhật ký không viết lại quá khứ |
+
+**Kiểm tra:** không còn chỗ nào nhắc tới 4 file đã xóa; mọi link tương đối trong `README.md` và `docs/README.md` trỏ tới file có thật; link `Report.md` trên GitHub trả về HTTP 200.
+
+### Kết quả / Ghi chú
+
+- Commit đề xuất: `docs: move Week 1 material to its own repository and fix links`.
+- Tiếp theo: làm **P7, P8** (Ngọc chọn làm cả hai) rồi cập nhật số liệu trong `TEST-RESULTS.md`.

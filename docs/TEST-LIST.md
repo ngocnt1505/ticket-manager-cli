@@ -1,6 +1,6 @@
 # Test list – Ticket Manager CLI
 
-Danh sách kịch bản cần test, viết **trước khi code** (Canon TDD, Report tuần 1 §2.2). Mỗi vòng TDD chuyển **đúng một dòng** thành test: Red → Green → Refactor → đánh dấu `[x]`.
+Danh sách kịch bản cần test, viết **trước khi code** (Canon TDD, [Report tuần 1](https://github.com/ngocnt1505/ai-training-week1/blob/main/Report.md) §2.2). Mỗi vòng TDD chuyển **đúng một dòng** thành test: Red → Green → Refactor → đánh dấu `[x]`.
 
 **Quy tắc:**
 

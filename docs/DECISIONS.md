@@ -4,7 +4,7 @@ Chốt trước khi viết code (Giai đoạn 2). Mọi test và code phải kh�
 
 **Nguồn** cho biết ai/đâu quyết định:
 
-- **W1**: đã chốt trong báo cáo tuần 1 (`docs/Report.md`).
+- **W1**: đã chốt trong báo cáo tuần 1 – [`Report.md` ở repo tuần 1](https://github.com/ngocnt1505/ai-training-week1/blob/main/Report.md); "Report §…" là số mục trong báo cáo đó.
 - **Ngọc**: Ngọc chọn ngày 2026-10-21 (sau khi xem các phương án Claude đưa ra).
 - **Ngọc (xác nhận)**: Claude đề xuất, Ngọc đã xem và xác nhận ngày 2026-10-21.
 
