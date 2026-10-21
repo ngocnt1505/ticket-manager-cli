@@ -87,11 +87,11 @@ Service nhận mảng tickets và trả về mảng **mới**; "không lưu" ở
 
 ### update
 
-- [ ] **S16** Đổi status → lưu lại, `updatedAt` mới, `createdAt` giữ nguyên *(W1)*
-- [ ] **S17** `--tags` thay thế toàn bộ tag cũ *(mới)*
-- [ ] **S18** Các ticket khác không bị ảnh hưởng *(mới)*
-- [ ] **S19** Id không tồn tại → lỗi `NOT_FOUND`, mảng đầu vào không đổi *(W1)*
-- [ ] **S20** Giá trị sai → lỗi, mảng đầu vào không đổi *(W1)*
+- [x] **S16** Đổi status → lưu lại, `updatedAt` mới, `createdAt` giữ nguyên *(W1)*
+- [x] **S17** `--tags` thay thế toàn bộ tag cũ *(mới)*
+- [x] **S18** Các ticket khác không bị ảnh hưởng *(mới)*
+- [x] **S19** Id không tồn tại → lỗi `NOT_FOUND`, mảng đầu vào không đổi *(W1)*
+- [x] **S20** Giá trị sai → lỗi, mảng đầu vào không đổi *(W1)*
 
 ---
 

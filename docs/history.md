@@ -2140,3 +2140,55 @@ test('S19: an unknown id fails with NOT_FOUND and leaves the given list unchange
 
 - ✅ Đỏ đúng lý do; 44 test cũ vẫn xanh.
 - Commit đề xuất: `test(services): add failing tests for updating a ticket`.
+
+> **Cập nhật Bước 39:** Ngọc commit `531ea98 test(services): add failing tests for updating a ticket`.
+
+---
+
+## Bước 40 – Vòng 9: bước Green (`updateTicket`) – hoàn tất Giai đoạn 4.2
+
+**Thời gian:** 2026-10-21 · **Người làm:** Claude viết code (theo yêu cầu); Ngọc review và commit · **Commit:** chưa
+
+### What
+
+Viết `updateTicket` bằng cách ghép `findTicket` (service) và `applyUpdate` (model); đánh dấu `[x]` S16–S20.
+
+### Why
+
+- **Ghép các khối đã được test** thay vì viết lại: `findTicket` lo "không tìm thấy" (S19), `applyUpdate` lo validate + "không đổi một nửa" + `updatedAt` (S16, S17, S20). `updateTicket` chỉ còn một việc: **đặt ticket mới vào đúng chỗ trong mảng mới**.
+- **`tickets.map(...)`** tạo mảng mới, thay đúng ticket có `id` đó, giữ nguyên thứ tự và các ticket khác (S18, `DECISIONS.md` §9).
+- Lỗi được ném **trước** khi tạo mảng mới → không có gì để CLI ghi.
+
+### How
+
+```js
+function updateTicket(tickets, id, changes, now) {
+  const ticket = applyUpdate(findTicket(tickets, id), changes, now);
+  return {
+    tickets: tickets.map((existing) => (existing.id === id ? ticket : existing)),
+    ticket,
+  };
+}
+```
+
+```
+ℹ tests 49 · pass 49 · fail 0   (exit 0)
+```
+
+**Mutation thủ công:**
+
+| Mutation | Test đỏ |
+|---|---|
+| Ghi ticket mới thẳng vào mảng gốc (`tickets[i] = ticket`) | S18 – nhờ kiểm tra "mảng đầu vào không đổi" khi thành công |
+| Trả bản sao mảng cũ (quên thay ticket) | S16 |
+| Thay **mọi** ticket bằng ticket mới | S18 |
+
+→ Mutation đầu tiên chính là lỗi kiểu P2; lần này **bị bắt ngay** vì S18 đã được viết kèm kiểm tra đó từ đầu.
+
+### Kết quả / Ghi chú – tổng kết Giai đoạn 4.2 (Services)
+
+- ✅ **Services hoàn tất: S1–S20 + P2**, 21 unit test; tổng **49 test xanh**, vẫn chưa đụng file.
+- `src/services/ticketService.js`: 4 hàm thuần `createTicket`, `listTickets`, `findTicket`, `updateTicket`, mỗi hàm 3–10 dòng, dựa hoàn toàn vào model.
+- Trong 4.2: 1 quyết định thiết kế (hàm thuần trên mảng), 1 lỗ hổng do mutation phát hiện và lấp (P2), 1 refactor (`TicketError`), 1 lần đo mutation sai được phát hiện và làm lại.
+- Commit đề xuất: `feat(services): update a ticket`.
+- Tiếp theo: **Giai đoạn 4.3 – Storage (D1–D12)**: lần đầu tiên đụng tới file thật.

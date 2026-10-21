@@ -1,5 +1,6 @@
 const {
   buildTicket,
+  applyUpdate,
   validateStatus,
   validatePriority,
   normalizeTags,
@@ -35,6 +36,12 @@ function findTicket(tickets, id) {
   return ticket;
 }
 
-function updateTicket(tickets, id, changes, now) {}
+function updateTicket(tickets, id, changes, now) {
+  const ticket = applyUpdate(findTicket(tickets, id), changes, now);
+  return {
+    tickets: tickets.map((existing) => (existing.id === id ? ticket : existing)),
+    ticket,
+  };
+}
 
 module.exports = { createTicket, listTickets, findTicket, updateTicket };
