@@ -46,7 +46,10 @@ function load(filePath) {
     text = fs.readFileSync(filePath, 'utf8');
   } catch (err) {
     if (err.code === 'ENOENT') return [];
-    throw err;
+    throw new StorageError(
+      'READ_FAILED',
+      `Cannot read ticket file ${filePath} (${err.code}).`,
+    );
   }
   return parseTickets(text, filePath);
 }
@@ -59,6 +62,13 @@ function save(filePath, tickets) {
     fs.writeFileSync(tmpPath, serializeTickets(tickets));
     fs.renameSync(tmpPath, filePath);
   } catch (err) {
+    // Remove a half-written temporary file; rmSync never deletes a folder here
+    // (no `recursive`), and a cleanup failure must not hide the real error.
+    try {
+      fs.rmSync(tmpPath, { force: true });
+    } catch {
+      // keep reporting the original failure
+    }
     throw new StorageError(
       'SAVE_FAILED',
       `Cannot save tickets to ${filePath} (${err.code}).`,
