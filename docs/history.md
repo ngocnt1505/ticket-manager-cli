@@ -2580,3 +2580,80 @@ test('P5: when the final rename fails, save removes its temporary file', (t) => 
 
 - ✅ Cả hai đỏ đúng lý do – và output **cho thấy chính xác vấn đề**: P4 ra lỗi thô `Error`; P5 để lại `tickets.json.tmp`.
 - Commit đề xuất: `test(storage): add failing tests for read errors and temp file cleanup`.
+
+> **Cập nhật Bước 47:** Ngọc commit `c2bdca1 test(storage): add failing tests for read errors and temp file cleanup`.
+
+---
+
+## Bước 48 – P4, P5: bước Green; mutation lộ ra **code thừa** và **một lỗ hổng nguy hiểm**
+
+**Thời gian:** 2026-10-21 · **Người làm:** Claude viết code + test bổ sung (theo yêu cầu); Ngọc review và commit · **Commit:** chưa
+
+### What
+
+1. `load`: lỗi đọc khác `ENOENT` → `StorageError('READ_FAILED')` có đường dẫn và mã lỗi gốc (P4).
+2. `save`: khi lỗi, xóa file tạm (P5).
+3. **Rút gọn** code dọn file tạm sau khi mutation cho thấy một biến là thừa.
+4. **Bổ sung một assertion vào D10** sau khi mutation cho thấy `save` có thể xóa thư mục của người dùng mà không test nào phát hiện.
+
+### How – diễn biến
+
+**Lần viết đầu** có biến `wroteTmp` – chỉ dọn file tạm nếu chính `save` đã ghi nó (để không xóa nhầm thư mục `tickets.json.tmp` trong D10). 64/64 xanh.
+
+**Mutation 1 – "luôn dọn" (`if (true)`) → không test nào đỏ.** Phân tích: `fs.rmSync(path, { force: true })` **không xóa được thư mục** nếu không có `recursive` – nó ném lỗi, và lỗi đó đã bị `catch` nuốt. Có hay không có `wroteTmp` thì kết quả như nhau → **code thừa**, không hành vi nào phụ thuộc vào nó. TDD: code không có test nào cần thì bỏ. Rút gọn:
+
+```js
+function save(filePath, tickets) {
+  const tmpPath = `${filePath}.tmp`;
+  try {
+    fs.writeFileSync(tmpPath, serializeTickets(tickets));
+    fs.renameSync(tmpPath, filePath);
+  } catch (err) {
+    // Remove a half-written temporary file; rmSync never deletes a folder here
+    // (no `recursive`), and a cleanup failure must not hide the real error.
+    try {
+      fs.rmSync(tmpPath, { force: true });
+    } catch {
+      // keep reporting the original failure
+    }
+    throw new StorageError('SAVE_FAILED', `Cannot save tickets to ${filePath} (${err.code}).`);
+  }
+}
+```
+
+Kiểm tra bằng tay: thư mục `tickets.json.tmp` (có file bên trong) **vẫn còn nguyên** sau khi `save` lỗi.
+
+**Mutation 2 – `rmSync(…, { recursive: true })` → không test nào đỏ.** Đây là lỗi **nguy hiểm nhất** có thể xảy ra: `save` xóa **cả một thư mục của người dùng**. D10 có tạo thư mục đó nhưng **không kiểm tra nó còn** sau khi `save` lỗi. Bổ sung vào D10:
+
+```js
+  // save must never delete something it did not create.
+  assert.ok(fs.existsSync(`${file}.tmp`), 'the folder in the way is left alone');
+```
+
+| Lần chạy | Kết quả |
+|---|---|
+| Code thật | ✔ 64/64 |
+| Mutation `recursive: true` | ✖ **D10** – đã bị bắt |
+| Mutation bỏ hẳn `rmSync` | ✖ P5 |
+
+**P4** – kiểm tra bằng tay:
+
+```
+StorageError READ_FAILED | Cannot read ticket file C:\Users\PC\AppData\Local\Temp (EISDIR).
+```
+
+### Why
+
+- Bình luận trong code giải thích **vì sao an toàn** (`rmSync` không có `recursive` không xóa thư mục) – người sửa code sau này biết không được thêm `recursive`; và giờ có D10 canh.
+- `catch {}` rỗng có chủ đích: lỗi dọn dẹp không được che lỗi ghi thật (người dùng cần biết **vì sao** không lưu được).
+
+### Kết quả / Ghi chú
+
+- ✅ P4, P5 xong. **Giai đoạn 4.3 (Storage) hoàn tất: D1–D12 + P3, P4, P5**, 64 test xanh.
+- Bài học mới từ mutation testing – hai chiều:
+  - mutation **không bị bắt** có thể nghĩa là **code thừa** (mutation 1 → bỏ `wroteTmp`);
+  - hoặc là **test thiếu** (mutation 2 → bổ sung assertion cho D10).
+  Phải phân tích từng trường hợp, không mặc định thêm test.
+- Commit đề xuất (2 commit):
+  1. `feat(storage): report read errors and clean up the temp file` – `src/`, `docs/TEST-LIST.md`
+  2. `test(storage): ensure save never deletes what it did not create` – `test/`, `docs/history.md`

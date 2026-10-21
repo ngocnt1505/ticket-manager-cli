@@ -38,6 +38,8 @@ test('D10: when writing fails, save reports SAVE_FAILED and the old file stays b
   const before = fs.readFileSync(file);
   assert.throws(() => save(file, [{ id: 1 }, { id: 2 }]), { name: 'StorageError', code: 'SAVE_FAILED' });
   assert.ok(before.equals(fs.readFileSync(file)));
+  // save must never delete something it did not create.
+  assert.ok(fs.existsSync(`${file}.tmp`), 'the folder in the way is left alone');
 });
 
 test('D11: save into a missing folder fails with SAVE_FAILED and does not create the folder', (t) => {
