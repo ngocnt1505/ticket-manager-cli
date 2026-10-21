@@ -948,3 +948,65 @@ INVALID_PRIORITY | Invalid priority "urgent". Allowed values: low, medium, high
 - ✅ M7–M10 xanh. `TEST-LIST.md`: 10/77.
 - **Mùi code (code smell) để Refactor:** hai hàm trùng nhau gần như từng dòng, chỉ khác danh sách, mã lỗi và tên trường. Bước tiếp theo sẽ gộp thành một hàm dùng chung và đưa hai danh sách lên thành hằng số (để sau này `list --status` và trang help dùng lại được).
 - Commit đề xuất: `feat(models): validate status and priority`.
+
+> **Cập nhật Bước 18:** Ngọc commit và push `f4dddee feat(models): validate status and priority`.
+
+---
+
+## Bước 19 – Vòng 2: Refactor (gộp thành `oneOf`, hằng `STATUSES` / `PRIORITIES`)
+
+**Thời gian:** 2026-10-21 · **Người làm:** Claude (theo yêu cầu); Ngọc review và commit · **Commit:** chưa
+
+### What
+
+- Tách phần chung của `validateStatus` và `validatePriority` thành hàm `oneOf(value, allowed, code, label)`.
+- Đưa 2 danh sách lên đầu file thành hằng `STATUSES`, `PRIORITIES` và **export** chúng.
+- Không sửa test.
+
+### Why
+
+- **Loại bỏ trùng lặp (DRY):** hai hàm giống nhau từng dòng, chỉ khác 3 thứ (danh sách, mã lỗi, tên trường). Sửa cách báo lỗi (ví dụ dịch thông báo) thì trước đây phải sửa 2 chỗ, dễ lệch nhau; giờ chỉ 1 chỗ.
+- **Hằng số dùng lại được:** lớp ngoài sẽ cần danh sách này – service khi validate bộ lọc `list --status`, CLI khi in trang help (`Statuses: open, in_progress, done`). Export từ model → một nguồn duy nhất, đúng tinh thần "đổi một chỗ".
+- **Giữ `validateStatus` / `validatePriority`** thay vì để nơi khác gọi thẳng `oneOf(...)`: tên hàm nói rõ ý định, test và code gọi không phải biết chi tiết bên trong.
+
+### How
+
+```js
+const MAX_TITLE_LENGTH = 100;
+const STATUSES = ['open', 'in_progress', 'done'];
+const PRIORITIES = ['low', 'medium', 'high'];
+
+// Checks that `value` is one of `allowed`; shared by every fixed-list field.
+function oneOf(value, allowed, code, label) {
+  if (!allowed.includes(value)) {
+    throw new ValidationError(
+      code,
+      `Invalid ${label} "${value}". Allowed values: ${allowed.join(', ')}`,
+    );
+  }
+  return value;
+}
+
+function validateStatus(status) {
+  return oneOf(status, STATUSES, 'INVALID_STATUS', 'status');
+}
+
+function validatePriority(priority) {
+  return oneOf(priority, PRIORITIES, 'INVALID_PRIORITY', 'priority');
+}
+```
+
+Chứng minh hành vi không đổi:
+
+| Kiểm tra | Kết quả |
+|---|---|
+| File test có bị sửa không (checksum) | `OK` – không đổi |
+| `npm test` | `tests 10 · pass 10 · fail 0` (exit 0) |
+| Thông báo lỗi | `Invalid status "OPEN". Allowed values: open, in_progress, done` – giống hệt trước |
+
+### Kết quả / Ghi chú
+
+- ✅ Refactor thứ hai của dự án. **Vòng 2 (M7–M10) hoàn tất.**
+- VS Code từng báo *"Could not find name 'STATUSES'"* – do xem file ở trạng thái **giữa hai lần sửa** (đã dùng hằng nhưng chưa khai báo). Sau khi thêm khai báo, test chạy đúng → không phải lỗi thật. Bài học: chỉ tin kết quả **chạy test** sau khi sửa xong, không tin cảnh báo trung gian.
+- Commit đề xuất: `refactor(models): share enum validation for status and priority`.
+- Tiếp theo: **vòng 3 – description (M11–M14)**.

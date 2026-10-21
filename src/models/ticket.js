@@ -1,6 +1,8 @@
 const { ValidationError } = require('../errors');
 
 const MAX_TITLE_LENGTH = 100;
+const STATUSES = ['open', 'in_progress', 'done'];
+const PRIORITIES = ['low', 'medium', 'high'];
 
 function validateTitle(title) {
   if (typeof title !== 'string') {
@@ -17,26 +19,29 @@ function validateTitle(title) {
   return clean;
 }
 
-function validateStatus(status) {
-  const allowed = ['open', 'in_progress', 'done'];
-  if (!allowed.includes(status)) {
+// Checks that `value` is one of `allowed`; shared by every fixed-list field.
+function oneOf(value, allowed, code, label) {
+  if (!allowed.includes(value)) {
     throw new ValidationError(
-      'INVALID_STATUS',
-      `Invalid status "${status}". Allowed values: ${allowed.join(', ')}`,
+      code,
+      `Invalid ${label} "${value}". Allowed values: ${allowed.join(', ')}`,
     );
   }
-  return status;
+  return value;
+}
+
+function validateStatus(status) {
+  return oneOf(status, STATUSES, 'INVALID_STATUS', 'status');
 }
 
 function validatePriority(priority) {
-  const allowed = ['low', 'medium', 'high'];
-  if (!allowed.includes(priority)) {
-    throw new ValidationError(
-      'INVALID_PRIORITY',
-      `Invalid priority "${priority}". Allowed values: ${allowed.join(', ')}`,
-    );
-  }
-  return priority;
+  return oneOf(priority, PRIORITIES, 'INVALID_PRIORITY', 'priority');
 }
 
-module.exports = { validateTitle, validateStatus, validatePriority };
+module.exports = {
+  STATUSES,
+  PRIORITIES,
+  validateTitle,
+  validateStatus,
+  validatePriority,
+};
