@@ -7,6 +7,7 @@ const {
   validatePriority,
   validateDescription,
   normalizeTags,
+  buildTicket,
 } = require('../../src/models/ticket');
 
 test('M1: trims a valid title', () => {
@@ -147,4 +148,39 @@ test('P1: rejects non-string tags with INVALID_TAG', () => {
       code: 'INVALID_TAG',
     });
   }
+});
+
+const NOW = new Date('2026-10-21T08:00:00.000Z');
+
+test('M21: a ticket with only a title gets defaults, the given id and timestamps', () => {
+  assert.deepEqual(buildTicket({ title: '  Fix login  ' }, { id: 1, now: NOW }), {
+    id: 1,
+    title: 'Fix login',
+    description: '',
+    status: 'open',
+    priority: 'medium',
+    tags: [],
+    createdAt: '2026-10-21T08:00:00.000Z',
+    updatedAt: '2026-10-21T08:00:00.000Z',
+  });
+});
+
+test('M22: a ticket with every field uses the validated values', () => {
+  const input = {
+    title: 'Crash on save',
+    description: ' Happens on Windows ',
+    status: 'in_progress',
+    priority: 'high',
+    tags: 'Bug, UI',
+  };
+  const ticket = buildTicket(input, { id: 7, now: NOW });
+  assert.equal(ticket.id, 7);
+  assert.equal(ticket.description, 'Happens on Windows');
+  assert.equal(ticket.status, 'in_progress');
+  assert.equal(ticket.priority, 'high');
+  assert.deepEqual(ticket.tags, ['bug', 'ui']);
+
+  assert.throws(() => buildTicket({ ...input, priority: 'urgent' }, { id: 7, now: NOW }), {
+    code: 'INVALID_PRIORITY',
+  });
 });

@@ -1351,3 +1351,61 @@ function normalizeTags(tags) {
 - `TEST-LIST.md`: 21 mục `[x]` (M1–M20 + P1).
 - Commit đề xuất: `feat(models): reject non-string tags`.
 - Tiếp theo: **vòng 5 – tạo và cập nhật ticket (M21–M27)**, vòng cuối của 4.1.
+
+> **Cập nhật Bước 25:** Ngọc commit và push `90ab165 feat(models): reject non-string tags`. **P1 hoàn tất.**
+
+---
+
+## Bước 26 – Vòng 5a (`buildTicket` – M21, M22): bước Red
+
+**Thời gian:** 2026-10-21 · **Người làm:** Claude viết test + stub (theo yêu cầu); Ngọc review và commit · **Commit:** chưa
+
+### What
+
+- Tách vòng 5 thành **5a** (`buildTicket`, M21–M22) và **5b** (`applyUpdate`, M23–M27).
+- Thêm 2 test cho `buildTicket(input, { id, now })` và stub rỗng.
+
+### Why
+
+- **Tách 5a/5b:** hai hàm có trách nhiệm khác nhau (tạo mới / sửa); tách thì mỗi cặp Red–Green nhỏ, commit dễ review.
+- **`id` và `now` được truyền vào, không tự sinh trong model:**
+  - `now` cố định (`2026-10-21T08:00:00.000Z`) → test **xác định**, không phụ thuộc đồng hồ máy; nếu model tự gọi `new Date()` thì không thể viết `deepEqual` với `createdAt`.
+  - `id` cần biết các ticket đã có (id lớn nhất + 1) – model là hàm thuần, không có dữ liệu đó → việc của **service** (S1–S3).
+- **M21 dùng `deepEqual` cho cả object:** khẳng định chính xác mọi trường mặc định *và* không có trường thừa.
+- **M22 kiểm tra thêm một giá trị sai** (`priority: 'urgent'`): `buildTicket` phải **dùng** các hàm validate đã có, không tự kiểm tra lại theo cách khác.
+
+### How
+
+```js
+const NOW = new Date('2026-10-21T08:00:00.000Z');
+
+test('M21: a ticket with only a title gets defaults, the given id and timestamps', () => {
+  assert.deepEqual(buildTicket({ title: '  Fix login  ' }, { id: 1, now: NOW }), {
+    id: 1,
+    title: 'Fix login',
+    description: '',
+    status: 'open',
+    priority: 'medium',
+    tags: [],
+    createdAt: '2026-10-21T08:00:00.000Z',
+    updatedAt: '2026-10-21T08:00:00.000Z',
+  });
+});
+
+test('M22: a ticket with every field uses the validated values', () => {
+  // title, description ' Happens on Windows ', status in_progress, priority high, tags 'Bug, UI'
+  // → description đã trim, tags ['bug', 'ui']; priority 'urgent' → INVALID_PRIORITY
+});
+```
+
+```
+✖ M21  AssertionError: Expected values to be strictly deep-equal   (stub trả undefined)
+✖ M22  TypeError: Cannot read properties of undefined (reading 'id')
+ℹ tests 23 · pass 21 · fail 2
+```
+
+### Kết quả / Ghi chú
+
+- ✅ M21 đỏ đúng lý do (`AssertionError`).
+- M22 đỏ vì `TypeError` – nhưng lỗi xảy ra ở **dòng test** `ticket.id` (stub trả `undefined`), không phải trong code sản phẩm. Ý nghĩa vẫn là "chưa tạo ra ticket" → chấp nhận là đỏ đúng lý do. Phân biệt với M6/P1, nơi `TypeError` xuất phát **từ code sản phẩm** – đó mới là lỗi cần sửa.
+- Commit đề xuất: `test(models): add failing tests for building a ticket`.

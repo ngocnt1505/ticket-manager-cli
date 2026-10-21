@@ -75,6 +75,8 @@ function normalizeTags(tags) {
   return [...new Set(clean)];
 }
 
+function buildTicket(input, { id, now }) {}
+
 module.exports = {
   STATUSES,
   PRIORITIES,
@@ -83,4 +85,5 @@ module.exports = {
   validatePriority,
   validateDescription,
   normalizeTags,
+  buildTicket,
 };
