@@ -1878,3 +1878,63 @@ test('S13: an invalid filter value is an error, not an empty result', () => {
 
 - ✅ Đỏ đúng lý do; 33 test cũ vẫn xanh.
 - Commit đề xuất: `test(services): add failing tests for listing and filtering`.
+
+> **Cập nhật Bước 34:** Ngọc commit `e3ec6bb test(services): add failing tests for listing and filtering`.
+
+---
+
+## Bước 35 – Vòng 7: bước Green (`listTickets`)
+
+**Thời gian:** 2026-10-21 · **Người làm:** Claude viết code (theo yêu cầu); Ngọc review và commit · **Commit:** chưa
+
+### What
+
+Viết `listTickets(tickets, filters)`; đánh dấu `[x]` S5–S13.
+
+### Why
+
+- **Validate bộ lọc trước khi lọc**, dùng lại `validateStatus`, `validatePriority`, `normalizeTags` của model → giá trị sai báo lỗi (S13), tags tự được chuyển chữ thường (S11). Không viết luật lọc thứ hai khác với luật lưu.
+- **Bộ lọc không có** (`undefined`) → bỏ qua bước lọc đó; tags không có → `normalizeTags(undefined)` = `[]`.
+- **`tags.every(...)` cho AND:** `[].every(...)` luôn `true` → không nhập tag thì không lọc gì. Đúng một cách tự nhiên, không cần `if` riêng.
+- **`.filter` trả mảng mới trước khi `.sort`** → `sort` (sắp xếp tại chỗ) chạy trên bản sao, mảng đầu vào không bị đảo (S6, `DECISIONS.md` §9).
+
+### How
+
+```js
+function listTickets(tickets, filters) {
+  // Validate filters up front: a typo must be an error, not an empty result.
+  const status = filters.status === undefined ? undefined : validateStatus(filters.status);
+  const priority =
+    filters.priority === undefined ? undefined : validatePriority(filters.priority);
+  const tags = normalizeTags(filters.tags);
+
+  return tickets
+    .filter((ticket) => status === undefined || ticket.status === status)
+    .filter((ticket) => priority === undefined || ticket.priority === priority)
+    .filter((ticket) => tags.every((tag) => ticket.tags.includes(tag)))
+    .sort((a, b) => a.id - b.id);
+}
+```
+
+```
+ℹ tests 42 · pass 42 · fail 0   (exit 0)
+```
+
+**Mutation thủ công:**
+
+| Mutation | Test đỏ |
+|---|---|
+| Không có bộ lọc thì `tickets.sort(...)` thẳng trên mảng gốc | S6 – bẫy `sort` tại chỗ được chặn |
+| `tags.some` (OR) thay vì `tags.every` (AND) | S10 **và** S6, S7, S8 |
+| Bỏ `.sort(...)` | S6 |
+| Không validate status (lọc sai → trả rỗng) | S13 |
+| Tách tags thủ công, không qua `normalizeTags` (giữ hoa thường) | S11 |
+
+**Điều thú vị từ mutation `some`:** đỏ cả S6–S8 – các test **không lọc theo tag**. Vì `[].some(...)` luôn `false` → loại hết ticket khi người dùng không nhập tag; còn `[].every(...)` luôn `true`. `every` đúng cả về nghĩa (AND) lẫn trường hợp rỗng.
+
+### Kết quả / Ghi chú
+
+- ✅ **Vòng 7 hoàn tất** sau commit này. `TEST-LIST.md`: S1–S13 + P2.
+- Refactor: không cần – mỗi bộ lọc một dòng `.filter`, đọc thẳng được.
+- Commit đề xuất: `feat(services): list tickets with filters`.
+- Tiếp theo: **vòng 8 – `findTicket` (S14–S15)** và lớp lỗi `NotFoundError`.

@@ -70,15 +70,15 @@ Service nhận mảng tickets và trả về mảng **mới**; "không lưu" ở
 
 ### list
 
-- [ ] **S5** Chưa có ticket → danh sách rỗng *(W1)*
-- [ ] **S6** Kết quả sắp xếp theo id tăng dần *(W1)*
-- [ ] **S7** Lọc theo status *(mới)*
-- [ ] **S8** Lọc theo priority *(mới)*
-- [ ] **S9** Lọc theo một tag *(mới)*
-- [ ] **S10** Lọc nhiều tag: ticket phải có **tất cả** tag (AND) *(mới)*
-- [ ] **S11** Lọc tag không phân biệt hoa thường (`--tags BUG` tìm được `bug`) *(mới)*
-- [ ] **S12** Kết hợp status + priority + tags theo AND *(mới)*
-- [ ] **S13** Giá trị lọc sai (`status: 'closed'`) → lỗi, **không** trả về danh sách rỗng *(W1)*
+- [x] **S5** Chưa có ticket → danh sách rỗng *(W1)*
+- [x] **S6** Kết quả sắp xếp theo id tăng dần *(W1)*
+- [x] **S7** Lọc theo status *(mới)*
+- [x] **S8** Lọc theo priority *(mới)*
+- [x] **S9** Lọc theo một tag *(mới)*
+- [x] **S10** Lọc nhiều tag: ticket phải có **tất cả** tag (AND) *(mới)*
+- [x] **S11** Lọc tag không phân biệt hoa thường (`--tags BUG` tìm được `bug`) *(mới)*
+- [x] **S12** Kết hợp status + priority + tags theo AND *(mới)*
+- [x] **S13** Giá trị lọc sai (`status: 'closed'`) → lỗi, **không** trả về danh sách rỗng *(W1)*
 
 ### show
 
