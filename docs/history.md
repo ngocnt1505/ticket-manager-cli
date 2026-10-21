@@ -2404,3 +2404,51 @@ Thêm vòng kiểm tra `id` vào cuối `parseTickets`; đánh dấu `[x] P3`.
 - ✅ P3 hoàn tất – mục Phát sinh thứ ba. File hỏng ở **bất kỳ** mức nào (cú pháp, không phải mảng, id hỏng) đều bị chặn ngay khi đọc, với cùng một mã `CORRUPTED_FILE`.
 - Commit đề xuất: `feat(storage): reject entries without a unique positive id`.
 - Tiếp theo: **vòng 11 – `load` / `save` với file thật (D7–D12)**.
+
+> **Cập nhật Bước 44:** Ngọc commit và push `4e78363 feat(storage): reject entries without a unique positive id`. **P3 hoàn tất.**
+
+---
+
+## Bước 45 – Vòng 11 (`load` / `save` với file thật – D7–D12): bước Red – integration test đầu tiên
+
+**Thời gian:** 2026-10-21 · **Người làm:** Claude viết test + stub (theo yêu cầu); Ngọc review và commit · **Commit:** chưa
+
+### What
+
+- `test/helpers/tempDir.js`: mỗi test có một thư mục tạm riêng trong `os.tmpdir()`, tự xóa sau test.
+- `test/integration/jsonStore.test.js`: 6 integration test với **file thật**.
+- Stub `load(filePath)`, `save(filePath, tickets)` trong `src/storage/jsonStore.js`.
+
+### Why
+
+- **File thật thay vì mock `fs`** (quyết định tuần 1, Report A.2 + §6.3): mock gắn chặt vào cách cài đặt và đã được kiểm chứng là bị bỏ qua khi import kiểu destructuring. File thật trong thư mục tạm kiểm tra đúng thứ người dùng gặp.
+- **`t.after(...)` để dọn thư mục** → chạy cả khi test đỏ; không bao giờ đụng `tickets.json` thật. Đã kiểm tra sau lần chạy đỏ: **0** thư mục `tickets-test-*` sót lại trong `C:\Users\PC\AppData\Local\Temp`.
+- **So sánh "từng byte"** (`Buffer.equals`) ở D9, D10 thay vì so nội dung JSON: chứng minh file **không bị ghi lại**, kể cả ghi lại y hệt.
+- **D10 – tạo lỗi ghi bằng tình huống thật** (kỹ thuật Report Mã 4): một **thư mục** trùng tên với file tạm `tickets.json.tmp` → bước ghi file tạm chắc chắn thất bại. Test này cũng buộc `save` phải ghi qua file tạm (ghi nguyên tử, `DECISIONS.md` §7) – nếu ghi thẳng vào `tickets.json` thì không có lỗi → test đỏ.
+- **D11** khóa quyết định của Ngọc: thư mục không tồn tại → báo lỗi, **không tự tạo**.
+- **D12**: ghi nguyên tử không được để rác (`tickets.json.tmp`) trong thư mục người dùng.
+
+### How
+
+```js
+test('D10: when writing fails, save reports SAVE_FAILED and the old file stays byte for byte', (t) => {
+  const file = path.join(tempDir(t), 'tickets.json');
+  fs.writeFileSync(file, '[{"id":1}]');
+  // A folder where the temporary file should go makes the write fail for real (no mocks).
+  fs.mkdirSync(`${file}.tmp`);
+  const before = fs.readFileSync(file);
+  assert.throws(() => save(file, [{ id: 1 }, { id: 2 }]), { name: 'StorageError', code: 'SAVE_FAILED' });
+  assert.ok(before.equals(fs.readFileSync(file)));
+});
+// D7, D8, D9, D11, D12: xem file test
+```
+
+```
+✖ D7 · ✖ D8 · ✖ D9 · ✖ D10 · ✖ D11 · ✖ D12   – cả 6 đều AssertionError
+ℹ tests 62 · pass 56 · fail 6
+```
+
+### Kết quả / Ghi chú
+
+- ✅ Đỏ đúng lý do; 56 test cũ vẫn xanh; không sót thư mục tạm.
+- Commit đề xuất: `test(storage): add failing integration tests for load and save`.

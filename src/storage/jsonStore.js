@@ -38,4 +38,8 @@ function serializeTickets(tickets) {
   return `${JSON.stringify(tickets, null, 2)}\n`;
 }
 
-module.exports = { parseTickets, serializeTickets };
+function load(filePath) {}
+
+function save(filePath, tickets) {}
+
+module.exports = { parseTickets, serializeTickets, load, save };
