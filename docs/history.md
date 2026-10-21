@@ -3174,3 +3174,103 @@ Sau khi chạy: **0** thư mục `tickets-test-*` sót lại.
 
 - ✅ Đỏ đúng lý do; 74 test cũ vẫn xanh.
 - Commit đề xuất: `test(cli): add failing end-to-end tests that run the real program`.
+
+> **Cập nhật Bước 56:** Ngọc commit `04b6c2b test(cli): add failing end-to-end tests that run the real program`.
+
+---
+
+## Bước 57 – Vòng 15: bước Green (`bin/tickets.js`, lệnh lạ, `StorageError` → exit 1); chạy tay phát hiện **P6**
+
+**Thời gian:** 2026-10-21 · **Người làm:** Claude viết code (theo yêu cầu); Ngọc review và commit · **Commit:** chưa
+
+### What
+
+- `bin/tickets.js`: điểm vào của chương trình – nối `run()` với thế giới thật.
+- `src/cli.js`: hàm `findCommand` (thiếu lệnh / lệnh lạ → `UsageError`, liệt kê các lệnh có sẵn); `StorageError` → **exit 1**.
+- Đánh dấu `[x]` C11–C18. Ghi mục Phát sinh **P6**.
+
+### How
+
+```js
+#!/usr/bin/env node
+// Entry point: connects the CLI to the real world (process args, console, clock, JSON file).
+const path = require('node:path');
+
+const { run } = require('../src/cli');
+const { load, save } = require('../src/storage/jsonStore');
+
+const filePath = path.resolve(process.env.TICKETS_FILE || 'tickets.json');
+
+process.exitCode = run(process.argv.slice(2), {
+  store: {
+    load: () => load(filePath),
+    save: (tickets) => save(filePath, tickets),
+  },
+  now: () => new Date(),
+  stdout: (line) => process.stdout.write(`${line}\n`),
+  stderr: (line) => process.stderr.write(`${line}\n`),
+});
+```
+
+```js
+// src/cli.js
+function findCommand(name) {
+  const available = `Available commands: ${Object.keys(COMMANDS).join(', ')}`;
+  if (name === undefined) throw new UsageError('MISSING_COMMAND', `Missing command. ${available}`);
+  const command = COMMANDS[name];
+  if (!command) throw new UsageError('UNKNOWN_COMMAND', `Unknown command "${name}". ${available}`);
+  return command;
+}
+// catch: if (err instanceof NotFoundError || err instanceof StorageError) { … return 1; }
+```
+
+### Why
+
+- **`bin/tickets.js` là chỗ duy nhất biết về thế giới thật** (`process.argv`, `process.env`, `process.stdout`, đồng hồ, file JSON). Mọi thứ khác nhận qua tham số → test được không cần tiến trình thật; còn file này được test bằng `spawnSync`.
+- **`path.resolve(TICKETS_FILE || 'tickets.json')`**: đường dẫn tương đối tính từ thư mục hiện tại (`DECISIONS.md` §7).
+- **`process.exitCode = …` thay vì `process.exit(…)`**: `process.exit` có thể cắt ngang output chưa ghi xong khi stdout là pipe; `exitCode` để Node tự thoát sau khi ghi hết.
+- **`StorageError` → 1**: file hỏng / không ghi được là lỗi **dữ liệu**, phải đọc file mới biết.
+
+```
+ℹ tests 82 · pass 82 · fail 0 · duration ~2.2 s
+```
+
+**Mutation thủ công:**
+
+| Mutation | Test đỏ |
+|---|---|
+| Bỏ qua `TICKETS_FILE` | C18 |
+| `StorageError` không được ánh xạ → lỗi văng ra kèm stack trace | C16, C18 |
+| Không kiểm tra lệnh lạ | C15 |
+| Bỏ `process.exitCode` (luôn thoát 0) | C13, C15, C16 |
+
+**Chạy tay chương trình thật:**
+
+```
+$ tickets create --title "Sửa lỗi đăng nhập" --priority high --tags "Bug, UI"
+Created ticket #1: Sửa lỗi đăng nhập
+$ tickets list
+#1  open         high    Sửa lỗi đăng nhập  [bug, ui]
+#2  in_progress  medium  Viết tài liệu
+$ tickets show 7            → Error: Ticket #7 not found                                  (exit 1)
+$ tickets frobnicate        → Error: Unknown command "frobnicate". Available commands: create, list, show, update   (exit 2)
+$ (file hỏng) tickets list  → Error: Ticket file C:\…\manual-1089.json is not valid JSON (…). Fix or remove it and try again.   (exit 1)
+```
+
+**Phát hiện khi chạy tay – P6:**
+
+```
+$ tickets toString
+C:\Users\PC\OneDrive\Desktop\Week2_CLI\src\cli.js:32
+    throw err;
+TypeError: command.execute is not a function
+    at run (…\src\cli.js:19:13)
+```
+
+`COMMANDS['toString']` không phải `undefined` mà là hàm `toString` có sẵn của **mọi object JavaScript** → crash và **lộ stack trace**. Hai vấn đề: (1) tra lệnh phải chỉ trong các lệnh của mình; (2) chưa có nhánh bắt lỗi bất ngờ. Ghi thành **P6**, chờ Ngọc quyết định.
+
+### Kết quả / Ghi chú
+
+- ✅ C11–C18 xanh. **Toàn bộ 77 mục của test list + P1–P5 đã xong.**
+- Bài học: test tự động và chạy tay bổ trợ nhau – mutation kiểm tra test có bắt được lỗi **đã nghĩ tới**; chạy tay với input "lạ" tìm ra lỗi **chưa nghĩ tới**.
+- Commit đề xuất: `feat(cli): add the tickets executable`.

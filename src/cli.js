@@ -1,6 +1,6 @@
 const { parseArgs } = require('node:util');
 
-const { UsageError, ValidationError, NotFoundError } = require('./errors');
+const { UsageError, ValidationError, NotFoundError, StorageError } = require('./errors');
 
 const COMMANDS = {
   create: require('./commands/create'),
@@ -13,8 +13,8 @@ const COMMANDS = {
 // (output, clock, ticket storage) comes in through `io`, so tests can fake it.
 function run(argv, io) {
   const [name, ...args] = argv;
-  const command = COMMANDS[name];
   try {
+    const command = findCommand(name);
     const parsed = parseCommandLine(args, command.options);
     command.execute(parsed, { store: io.store, now: io.now(), print: io.stdout });
     return 0;
@@ -25,12 +25,20 @@ function run(argv, io) {
       return 2;
     }
     // Depends on the stored data → 1.
-    if (err instanceof NotFoundError) {
+    if (err instanceof NotFoundError || err instanceof StorageError) {
       io.stderr(`Error: ${err.message}`);
       return 1;
     }
     throw err;
   }
+}
+
+function findCommand(name) {
+  const available = `Available commands: ${Object.keys(COMMANDS).join(', ')}`;
+  if (name === undefined) throw new UsageError('MISSING_COMMAND', `Missing command. ${available}`);
+  const command = COMMANDS[name];
+  if (!command) throw new UsageError('UNKNOWN_COMMAND', `Unknown command "${name}". ${available}`);
+  return command;
 }
 
 // util.parseArgs throws its own errors (e.g. "-1" looks like an unknown option);

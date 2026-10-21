@@ -134,14 +134,14 @@ Service nhận mảng tickets và trả về mảng **mới**; "không lưu" ở
 
 ### Chạy CLI thật bằng `spawnSync` (I)
 
-- [ ] **C11** `tickets create --title "..." --priority high --tags bug,ui` → exit 0, file có ticket *(W1)*
-- [ ] **C12** `tickets list --status open --tags bug` → chỉ hiện ticket khớp *(mới)*
-- [ ] **C13** `tickets show 1` → exit 0; `tickets show 99` → exit 1 *(W1)*
-- [ ] **C14** `tickets update 1 --status done` → exit 0, file được cập nhật *(W1)*
-- [ ] **C15** Lệnh không tồn tại, thiếu tham số, id sai định dạng → exit 2 *(W1)*
-- [ ] **C16** File JSON hỏng → exit 1, thông báo dễ hiểu có đường dẫn, **không in stack trace**, file không bị ghi đè *(W1)*
-- [ ] **C17** Không có `TICKETS_FILE` → dùng `tickets.json` trong thư mục hiện tại *(mới)*
-- [ ] **C18** `TICKETS_FILE` trỏ vào thư mục chưa tồn tại → exit 1, không tạo thư mục *(mới)*
+- [x] **C11** `tickets create --title "..." --priority high --tags bug,ui` → exit 0, file có ticket *(W1)*
+- [x] **C12** `tickets list --status open --tags bug` → chỉ hiện ticket khớp *(mới)*
+- [x] **C13** `tickets show 1` → exit 0; `tickets show 99` → exit 1 *(W1)*
+- [x] **C14** `tickets update 1 --status done` → exit 0, file được cập nhật *(W1)*
+- [x] **C15** Lệnh không tồn tại, thiếu tham số, id sai định dạng → exit 2 *(W1)*
+- [x] **C16** File JSON hỏng → exit 1, thông báo dễ hiểu có đường dẫn, **không in stack trace**, file không bị ghi đè *(W1)*
+- [x] **C17** Không có `TICKETS_FILE` → dùng `tickets.json` trong thư mục hiện tại *(mới)*
+- [x] **C18** `TICKETS_FILE` trỏ vào thư mục chưa tồn tại → exit 1, không tạo thư mục *(mới)*
 
 ---
 
@@ -154,3 +154,4 @@ Trường hợp nghĩ ra trong lúc làm – thêm vào đây trước, làm sau
 - [x] **P3** File là mảng nhưng **phần tử hỏng** (`[1]`, `[null]`, ticket thiếu `id`, `id` trùng) → `CORRUPTED_FILE` thay vì lỗi khó hiểu ở bước sau (ví dụ `create` sinh id `NaN`). *(nghĩ ra ở vòng 10; Ngọc quyết định **làm, chỉ kiểm tra `id`** – không kiểm tra các trường khác để tránh over-testing, Report §6.1)*
 - [x] **P4** `load` đọc được file nhưng **lỗi khác "không tồn tại"** (ví dụ `TICKETS_FILE` trỏ vào một thư mục → `EISDIR`) → `StorageError` `READ_FAILED` có đường dẫn, thay vì lỗi thô của Node (CLI sẽ coi là bug). *(nghĩ ra ở vòng 11; Ngọc quyết định **làm**)*
 - [x] **P5** `save`: file tạm đã ghi xong nhưng bước `rename` lỗi → **xóa file tạm**, không để rác `tickets.json.tmp`. *(nghĩ ra ở vòng 11; Ngọc quyết định **làm**)*
+- [ ] **P6** Lỗi **bất ngờ** (bug) không được lộ stack trace: in `Unexpected error: …`, exit 1. Ví dụ thật: `tickets toString` → `COMMANDS['toString']` lấy nhầm hàm có sẵn của mọi object JavaScript → crash với `TypeError: command.execute is not a function` kèm stack trace. Cần cả hai: tra lệnh chỉ trong các lệnh **của mình** (`Object.hasOwn`) và một nhánh bắt mọi lỗi còn lại. *(phát hiện khi chạy tay ở vòng 15; chờ Ngọc quyết định)*
