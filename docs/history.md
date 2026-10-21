@@ -279,3 +279,63 @@ Các điểm W1 lấy lại từ `docs/Report.md`: title (100 ký tự theo `.le
 - Mục `--tags` là ví dụ cụ thể **không nhận nguyên đề xuất của AI**: Ngọc dừng lại ở mục này, yêu cầu xem các phương án rồi mới chọn → nên ghi vào `AI-LOG.md`.
 - Bước tiếp theo: Ngọc rà `TEST-LIST.md`, rồi tự commit:
   `git add docs/DECISIONS.md docs/TEST-LIST.md docs/history.md` → `git commit -m "docs: add design decisions and test list"` → `git push`.
+
+---
+
+## Bước 6 – Giai đoạn 3, vòng TDD đầu tiên (M1): bước Red – gặp "xanh giả" do file chưa lưu
+
+**Thời gian:** 2026-10-21 · **Người làm:** Ngọc · **Commit:** chưa
+
+> Ghi chú bước trước: Ngọc đã commit và push `d3aed74 docs: add design decisions and test list`. Cả hai commit message hiện có đều bắt đầu bằng **một dấu cách** (`" docs: …"`, `" init …"`) – không ảnh hưởng chức năng, cần xem lại cách gõ message.
+
+### What
+
+Bắt đầu vòng TDD đầu tiên với kịch bản **M1** (trim title hợp lệ). Ngọc viết `test/unit/ticket.model.test.js` (dựa trên Mã 1 của Report tuần 1) và chạy `npm test`.
+
+### Why
+
+- Chọn **M1 trước M2** (dù ví dụ trong kế hoạch là "empty title"): Canon TDD đi từ trường hợp **đơn giản nhất** – M1 là happy path, chỉ cần 1 dòng code để xanh; các trường hợp lỗi (M2…) "kéo" thêm code ở các vòng sau.
+- Bước Red phải **thấy đỏ** trước khi viết code: nếu test mới viết mà đã xanh thì hoặc test không kiểm tra gì, hoặc nó không được chạy.
+
+### How
+
+```js
+const { test } = require('node:test');
+const assert = require('node:assert/strict');
+
+const { validateTitle } = require('../../src/models/ticket');
+
+test('M1: trims a valid title', () => {
+  assert.equal(validateTitle('   Fix login   '), 'Fix login');
+});
+```
+
+**Lần chạy 1 (Ngọc chạy) – XANH, sai kỳ vọng:**
+
+```
+✔ test\unit\ticket.model.test.js (49.9ms)
+ℹ tests 1
+ℹ pass 1
+ℹ fail 0
+```
+
+Hai dấu hiệu bất thường:
+1. Kỳ vọng là **đỏ** (`src/models/ticket` chưa tồn tại) nhưng lại xanh.
+2. Dòng ✔ hiện **tên file**, không phải tên test `M1: trims a valid title`.
+
+**Điều tra (Claude):** nội dung file trên đĩa đúng (264 byte), thư mục `src/` chưa có. Chạy lại:
+
+```
+Error: Cannot find module '../../src/models/ticket'
+✖ test\unit\ticket.model.test.js
+ℹ tests 1 · pass 0 · fail 1
+```
+
+**Nguyên nhân:** lúc Ngọc chạy, file **chưa được lưu** trong VS Code → trên đĩa là file rỗng. `node --test` chạy file rỗng, không thấy `test()` nào, nên tính **chính file đó** là 1 test và cho pass.
+
+### Kết quả / Ghi chú
+
+- ⚠️ **"Xanh giả" thật đầu tiên của dự án** – đúng hiện tượng Report tuần 1 §5.3 cảnh báo: thấy xanh mà không assertion nào được chạy. Bước Red đã bắt được nó **vì đã đoán trước kết quả phải đỏ**.
+- Dấu hiệu nhận biết về sau: dòng ✔/✖ chỉ có **tên file** = file không có test nào được đăng ký (file rỗng, chưa lưu, hoặc quên gọi `test()`).
+- Phòng tránh: bật **File → Auto Save** trong VS Code, hoặc luôn `Ctrl+S` trước khi chạy test.
+- Hiện trạng: test đỏ vì `Cannot find module` – **chưa phải đỏ đúng lý do**. Việc tiếp theo: thêm stub `src/models/ticket.js`.
