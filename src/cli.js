@@ -5,6 +5,7 @@ const { UsageError } = require('./errors');
 const COMMANDS = {
   create: require('./commands/create'),
   list: require('./commands/list'),
+  show: require('./commands/show'),
 };
 
 // Runs one command and returns the exit code. Everything outside the program

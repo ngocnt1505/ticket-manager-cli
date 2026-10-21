@@ -2817,3 +2817,61 @@ function formatLine(ticket) {
 - ✅ C1–C4 xanh.
 - Cột status/priority căn bằng `padEnd` theo **giá trị dài nhất** (`'in_progress'`, `'medium'`) – viết tên giá trị thay vì số `11`, `6` để người đọc hiểu vì sao.
 - Commit đề xuất: `feat(cli): add create and list commands`.
+
+> **Cập nhật Bước 50:** Ngọc commit và push `30edf79 feat(cli): add create and list commands`. **Vòng 12 hoàn tất.**
+
+---
+
+## Bước 51 – Vòng 13 (`show`, không tìm thấy, id sai – C5, C9, C10): bước Red
+
+**Thời gian:** 2026-10-21 · **Người làm:** Claude viết test + stub (theo yêu cầu); Ngọc review và commit · **Commit:** chưa
+
+### What
+
+- Thêm 3 test vào `test/unit/cli.test.js`.
+- Stub `src/commands/show.js` (lệnh rỗng) và đăng ký vào `COMMANDS` trong `src/cli.js`.
+
+### Why
+
+- **Stub là một lệnh rỗng** (không chỉ thiếu lệnh): nếu `show` chưa có trong `COMMANDS`, `run` sẽ crash vì `command` là `undefined` → test đỏ vì `TypeError`, chưa đúng lý do.
+- **C5 so khớp toàn bộ output** – định dạng trang chi tiết là thứ người dùng đọc; có tiếng Việt và đủ 8 trường.
+- **C9 – lần đầu tiên cần exit 1** (lỗi dữ liệu: phải đọc file mới biết ticket không tồn tại) → sẽ "kéo" ra ánh xạ `NotFoundError` → 1 (`DECISIONS.md` §8).
+- **C10 – id sai định dạng → exit 2** (nhìn lệnh là biết sai): 6 dạng từ Report tuần 1 Bảng 6. Đặc biệt **`-1`**: `parseArgs` sẽ hiểu là một **option** tên `-1` và ném lỗi riêng của Node → code phải bắt cả lỗi đó thành exit 2.
+- **"Không chặn quá tay"**: `show 42` phải ra **exit 1** (id hợp lệ nhưng không tồn tại), không phải exit 2 – chứng minh `42` được chấp nhận là id.
+
+### How
+
+```js
+test('C9: an unknown ticket exits 1 with the error on stderr only', () => {
+  const { exec } = cli();
+  const r = exec('show', '99');
+  assert.equal(r.code, 1);
+  assert.equal(r.stdout, '');
+  assert.match(r.stderr, /Ticket #99 not found/);
+});
+
+test('C10: a malformed id exits 2; 1 and 42 are accepted as ids', () => {
+  const { exec } = cli();
+  for (const bad of ['abc', '0', '-1', '1.5', '12abc', '1e2']) {
+    const r = exec('show', bad);
+    assert.equal(r.code, 2, `id ${bad}`);
+    assert.equal(r.stdout, '', `id ${bad}`);
+  }
+  exec('create', '--title', 'One');
+  assert.equal(exec('show', '1').code, 0);
+  assert.equal(exec('show', '42').code, 1, '42 is a valid id that simply does not exist');
+});
+// C5: so khớp toàn bộ 8 dòng của trang chi tiết – xem file test
+```
+
+```
+✖ C5   actual: ''          expected: 'Ticket #1\n  Title:       Sửa lỗi\n …'
+✖ C9   actual: 0           expected: 1
+✖ C10  AssertionError: id abc – actual: 0
+ℹ tests 71 · pass 68 · fail 3
+```
+
+### Kết quả / Ghi chú
+
+- ✅ Đỏ đúng lý do (cả 3 đều `AssertionError`); 68 test cũ vẫn xanh.
+- Commit đề xuất: `test(cli): add failing tests for the show command`.

@@ -71,3 +71,43 @@ test('C4: list prints one line per ticket with id, status, priority, title and t
   assert.match(lines[0], /^#1\s+open\s+high\s+Login bug\s+\[bug, auth\]$/);
   assert.match(lines[1], /^#2\s+open\s+medium\s+Docs$/);
 });
+
+test('C5: show prints every field of the ticket', () => {
+  const { exec } = cli();
+  exec('create', '--title', 'Sửa lỗi', '--description', 'Chi tiết', '--priority', 'high', '--tags', 'bug,ui');
+  const r = exec('show', '1');
+  assert.equal(r.code, 0);
+  assert.equal(
+    r.stdout,
+    [
+      'Ticket #1',
+      '  Title:       Sửa lỗi',
+      '  Status:      open',
+      '  Priority:    high',
+      '  Tags:        bug, ui',
+      '  Description: Chi tiết',
+      '  Created:     2026-10-21T08:00:00.000Z',
+      '  Updated:     2026-10-21T08:00:00.000Z',
+    ].join('\n'),
+  );
+});
+
+test('C9: an unknown ticket exits 1 with the error on stderr only', () => {
+  const { exec } = cli();
+  const r = exec('show', '99');
+  assert.equal(r.code, 1);
+  assert.equal(r.stdout, '');
+  assert.match(r.stderr, /Ticket #99 not found/);
+});
+
+test('C10: a malformed id exits 2; 1 and 42 are accepted as ids', () => {
+  const { exec } = cli();
+  for (const bad of ['abc', '0', '-1', '1.5', '12abc', '1e2']) {
+    const r = exec('show', bad);
+    assert.equal(r.code, 2, `id ${bad}`);
+    assert.equal(r.stdout, '', `id ${bad}`);
+  }
+  exec('create', '--title', 'One');
+  assert.equal(exec('show', '1').code, 0);
+  assert.equal(exec('show', '42').code, 1, '42 is a valid id that simply does not exist');
+});
