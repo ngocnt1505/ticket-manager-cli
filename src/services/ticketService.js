@@ -9,4 +9,6 @@ function createTicket(tickets, input, now) {
   return { tickets: [...tickets, ticket], ticket };
 }
 
-module.exports = { createTicket };
+function listTickets(tickets, filters) {}
+
+module.exports = { createTicket, listTickets };

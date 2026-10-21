@@ -1810,3 +1810,71 @@ test('P2: creating a ticket returns a new list and leaves the given list unchang
 - P2 là mục Phát sinh thứ hai đi trọn quy trình; khác P1 ở chỗ được **mutation testing phát hiện** chứ không phải nghĩ ra khi viết test.
 - Commit đề xuất: `test(services): ensure create does not modify the given list` (dùng `test:` vì chỉ thêm test, code không đổi).
 - Tiếp theo: **vòng 7 – `listTickets` (S5–S13)**.
+
+> **Cập nhật Bước 33:** Ngọc commit và push `6631cb5 test(services): ensure create does not modify the given list`. **P2 hoàn tất.**
+
+---
+
+## Bước 34 – Vòng 7 (`listTickets` – S5–S13): bước Red
+
+**Thời gian:** 2026-10-21 · **Người làm:** Claude viết test + stub (theo yêu cầu); Ngọc review và commit · **Commit:** chưa
+
+### What
+
+- Thêm hàm `seed()` tạo 4 ticket mẫu (bằng `createTicket` đã xanh) và helper `ids()`.
+- Thêm 9 test S5–S13; stub `listTickets(tickets, filters)`.
+
+### Why
+
+- **Bộ dữ liệu mẫu được chọn có chủ đích:** mỗi bộ lọc đều có ticket **khớp** và **không khớp** → test lọc có ý nghĩa (lọc trên dữ liệu toàn khớp thì code "không lọc gì" cũng qua).
+
+| id | title | status | priority | tags |
+|---|---|---|---|---|
+| 1 | Login bug | open | high | bug, auth |
+| 2 | Dark mode | in_progress | low | ui |
+| 3 | Crash on save | open | high | bug |
+| 4 | Docs | done | medium | – |
+
+- **S6 kiểm tra thêm "không đảo thứ tự mảng đầu vào":** `Array.prototype.sort` **sắp xếp tại chỗ** (sửa mảng gốc) – bẫy dễ gặp, vi phạm `DECISIONS.md` §9. Rút kinh nghiệm từ P2: khóa cam kết "không sửa đầu vào" ngay từ đầu.
+- **S10/S11** kiểm tra 2 quyết định của Ngọc ở `DECISIONS.md` §4: lọc nhiều tag theo **AND**, không phân biệt hoa thường.
+- **S12 có cả trường hợp kết quả rỗng** (`done` + `high`) → AND thật, không phải OR.
+- **S13**: lọc sai phải **báo lỗi**; trả `[]` thì người dùng tưởng "không có ticket nào" trong khi thực ra gõ sai (Report tuần 1, Bảng 6).
+- Helper `ids = (tickets) => tickets?.map(...)` dùng `?.` → stub trả `undefined` thì đỏ bằng `AssertionError`.
+
+### How
+
+```js
+test('S6: results are sorted by id without reordering the given list', () => {
+  const [t1, t2, t3] = seed();
+  const shuffled = [t3, t1, t2];
+  assert.deepEqual(ids(listTickets(shuffled, {})), [1, 2, 3]);
+  assert.deepEqual(ids(shuffled), [3, 1, 2]);
+});
+
+test('S10: with several tags a ticket must have all of them (AND)', () => {
+  assert.deepEqual(ids(listTickets(seed(), { tags: 'bug,auth' })), [1]);
+});
+
+test('S12: status, priority and tags filters are combined with AND', () => {
+  const tickets = seed();
+  assert.deepEqual(ids(listTickets(tickets, { status: 'open', priority: 'high', tags: 'auth' })), [1]);
+  assert.deepEqual(ids(listTickets(tickets, { status: 'done', priority: 'high' })), []);
+});
+
+test('S13: an invalid filter value is an error, not an empty result', () => {
+  assert.throws(() => listTickets(seed(), { status: 'closed' }), { name: 'ValidationError', code: 'INVALID_STATUS' });
+  assert.throws(() => listTickets(seed(), { priority: 'urgent' }), { name: 'ValidationError', code: 'INVALID_PRIORITY' });
+});
+// S5, S7, S8, S9, S11 tương tự
+```
+
+```
+✔ S1–S4, P2
+✖ S5 · S6 · S7 · S8 · S9 · S10 · S11 · S12 · S13   – đều AssertionError
+ℹ tests 42 · pass 33 · fail 9
+```
+
+### Kết quả / Ghi chú
+
+- ✅ Đỏ đúng lý do; 33 test cũ vẫn xanh.
+- Commit đề xuất: `test(services): add failing tests for listing and filtering`.
