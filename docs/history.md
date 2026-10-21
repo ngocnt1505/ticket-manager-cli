@@ -1538,3 +1538,79 @@ test('M24: an update returns a new ticket and leaves the original untouched', ()
 - ✅ Cả 5 đỏ đúng lý do; 23 test cũ vẫn xanh.
 - Bài học (đối chiếu Report §5.3): với test kiểu "**không có gì thay đổi**", phải chắc chắn **có gì đó đã được thử thay đổi** – nếu không, code không làm gì cũng qua.
 - Commit đề xuất: `test(models): add failing tests for updating a ticket`.
+
+> **Cập nhật Bước 28:** Ngọc commit `a0ab31b test(models): add failing tests for updating a ticket`.
+
+---
+
+## Bước 29 – Vòng 5b: bước Green (`applyUpdate`) – hoàn tất Giai đoạn 4.1
+
+**Thời gian:** 2026-10-21 · **Người làm:** Claude viết code (theo yêu cầu); Ngọc review và commit · **Commit:** chưa
+
+### What
+
+Viết `applyUpdate` cùng bảng `EDITABLE_FIELDS`; đánh dấu `[x]` M23–M27. Toàn bộ phần Models (M1–M27 + P1) xong.
+
+### Why
+
+- **Bảng `EDITABLE_FIELDS` (trường → hàm validate):** một chỗ duy nhất trả lời "sửa được trường nào" (`DECISIONS.md` §5). Trường không có trong bảng (`id`, `createdAt`, `updatedAt`, trường lạ) → `UNKNOWN_FIELD`. Thêm trường sửa được sau này chỉ cần thêm một dòng.
+- **Validate hết vào object tạm `clean` trước, rồi mới tạo ticket mới:** nếu gặp giá trị sai ở giữa chừng, lỗi được ném khi ticket gốc **chưa bị đụng tới** → không có "đổi một nửa" (M25).
+- **Trả về object mới bằng spread `{ ...ticket, ...clean, updatedAt }`**, không sửa `ticket` → service sau này có thể giữ bản cũ để so sánh hoặc bỏ đi nếu ghi file lỗi (M24).
+- Trường `tags` đi qua `normalizeTags` → giá trị mới **thay thế** mảng cũ (quyết định `--tags` thay thế).
+
+### How
+
+```js
+// Fields a user may change, each with the validator that cleans it.
+const EDITABLE_FIELDS = {
+  title: validateTitle,
+  description: validateDescription,
+  status: validateStatus,
+  priority: validatePriority,
+  tags: normalizeTags,
+};
+
+function applyUpdate(ticket, changes, now) {
+  const fields = Object.keys(changes);
+  if (fields.length === 0) {
+    throw new ValidationError(
+      'NO_CHANGES',
+      `Nothing to update. Editable fields: ${Object.keys(EDITABLE_FIELDS).join(', ')}`,
+    );
+  }
+  // Validate every field first, so one bad value never leaves a half-updated ticket.
+  const clean = {};
+  for (const field of fields) {
+    const validate = EDITABLE_FIELDS[field];
+    if (!validate) {
+      throw new ValidationError('UNKNOWN_FIELD', `Field "${field}" cannot be updated`);
+    }
+    clean[field] = validate(changes[field]);
+  }
+  return { ...ticket, ...clean, updatedAt: now.toISOString() };
+}
+```
+
+```
+ℹ tests 28 · pass 28 · fail 0   (exit 0)
+```
+
+**Mutation thủ công:**
+
+| Mutation | Test đỏ |
+|---|---|
+| `Object.assign(ticket, …)` – ghi thẳng vào ticket gốc | M24 |
+| Gán `ticket[field]` ngay khi validate từng trường – "đổi một nửa" | M24, **M25** |
+| Bỏ chặn trường không có trong bảng | M26 |
+| Quên làm mới `updatedAt` | M23 |
+
+→ Test M24 (đã được sửa để không xanh giả ở Bước 28) bắt được đúng hai lỗi nó sinh ra để bắt.
+
+### Kết quả / Ghi chú – tổng kết Giai đoạn 4.1 (Models)
+
+- ✅ **Models hoàn tất: 27/27 mục M + P1**, 28 unit test xanh, không đụng file hay đồng hồ hệ thống.
+- `src/models/ticket.js` export: `STATUSES`, `PRIORITIES`, 5 hàm validate/chuẩn hóa, `buildTicket`, `applyUpdate`.
+- Đã làm: 5 vòng (title, status/priority, description, tags, tạo/cập nhật) + 1 mục Phát sinh; **2 lần Refactor** (`MAX_TITLE_LENGTH`, `oneOf`) và **1 lần cân nhắc không refactor** (title/description).
+- Đã gặp và xử lý **2 "xanh giả"**: file test chưa lưu (Bước 6) và test "không đổi" với stub (Bước 28, chặn trước khi commit).
+- Commit đề xuất: `feat(models): apply updates without partial changes`.
+- Tiếp theo: **Giai đoạn 4.2 – Services (S1–S20)**.

@@ -91,7 +91,34 @@ function buildTicket(input, { id, now }) {
   };
 }
 
-function applyUpdate(ticket, changes, now) {}
+// Fields a user may change, each with the validator that cleans it.
+const EDITABLE_FIELDS = {
+  title: validateTitle,
+  description: validateDescription,
+  status: validateStatus,
+  priority: validatePriority,
+  tags: normalizeTags,
+};
+
+function applyUpdate(ticket, changes, now) {
+  const fields = Object.keys(changes);
+  if (fields.length === 0) {
+    throw new ValidationError(
+      'NO_CHANGES',
+      `Nothing to update. Editable fields: ${Object.keys(EDITABLE_FIELDS).join(', ')}`,
+    );
+  }
+  // Validate every field first, so one bad value never leaves a half-updated ticket.
+  const clean = {};
+  for (const field of fields) {
+    const validate = EDITABLE_FIELDS[field];
+    if (!validate) {
+      throw new ValidationError('UNKNOWN_FIELD', `Field "${field}" cannot be updated`);
+    }
+    clean[field] = validate(changes[field]);
+  }
+  return { ...ticket, ...clean, updatedAt: now.toISOString() };
+}
 
 module.exports = {
   STATUSES,
