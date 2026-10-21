@@ -3017,3 +3017,68 @@ test('C8: invalid values exit 2 with a helpful message and save nothing', () => 
 
 - ✅ Cả 3 đỏ đúng lý do (`AssertionError`); 71 test cũ vẫn xanh.
 - Commit đề xuất: `test(cli): add failing tests for update and validation errors`.
+
+> **Cập nhật Bước 53:** Ngọc commit `cd4e46e test(cli): add failing tests for update and validation errors`.
+
+---
+
+## Bước 54 – Vòng 14: bước Green (lệnh `update`, `ValidationError` → exit 2)
+
+**Thời gian:** 2026-10-21 · **Người làm:** Claude viết code (theo yêu cầu); Ngọc review và commit · **Commit:** chưa
+
+### What
+
+- `src/commands/update.js`: lệnh `update <id> [--title …] [--description …] [--status …] [--priority …] [--tags …]`.
+- `src/cli.js`: `ValidationError` → **exit 2** (cùng nhánh với `UsageError`); thêm bình luận giải thích quy tắc 2 / 1.
+- Đánh dấu `[x]` C6–C8.
+
+### Why
+
+- `update` ghép các khối đã test: `parseId` (vòng 13), `updateTicket` (4.2) → `store.save` → in dòng xác nhận.
+- **Kiểm tra "không có option" ở tầng lệnh** (`UsageError('NO_CHANGES')`), trước khi đọc file: thông báo gọi tên **option** (`--title, --description, --status, --priority, --tags`) lấy từ chính danh sách `options` → thêm option mới thì thông báo tự cập nhật.
+- **`ValidationError` → 2:** mọi lỗi giá trị (status/priority sai, title quá dài…) đều nhìn lệnh là biết sai (`DECISIONS.md` §8). Một dòng sửa ở `cli.js` áp dụng cho **cả 3 lệnh** `create`, `update`, `list` – C8 chứng minh điều này.
+- Dòng xác nhận in **giá trị sau khi chuẩn hóa** (`ticket[field]`, ví dụ tags đã chữ thường), không phải giá trị người dùng gõ → người dùng thấy đúng thứ đã lưu.
+
+### How
+
+```js
+execute({ values, positionals }, { store, now, print }) {
+  const id = parseId(positionals[0]);
+  const fields = Object.keys(values);
+  if (fields.length === 0) {
+    const flags = Object.keys(options).map((name) => `--${name}`);
+    throw new UsageError('NO_CHANGES', `Nothing to update. Use at least one of ${flags.join(', ')}.`);
+  }
+  const { tickets, ticket } = updateTicket(store.load(), id, values, now);
+  store.save(tickets);
+  const changes = fields.map((field) => `${field}: ${formatValue(ticket[field])}`);
+  print(`Updated ticket #${id} (${changes.join(', ')})`);
+},
+```
+
+```js
+// src/cli.js – catch
+// Wrong command line or invalid value: visible from the command alone → 2.
+if (err instanceof UsageError || err instanceof ValidationError) { … return 2; }
+// Depends on the stored data → 1.
+if (err instanceof NotFoundError) { … return 1; }
+```
+
+```
+ℹ tests 74 · pass 74 · fail 0   (exit 0)
+```
+
+**Mutation thủ công:**
+
+| Mutation | Test đỏ |
+|---|---|
+| `ValidationError` không được ánh xạ thành exit 2 | C8 |
+| Bỏ kiểm tra "không có option" | C7 |
+| Quên `store.save` | C6 |
+| Lưu dữ liệu cũ trước khi update | C6, C8 |
+
+### Kết quả / Ghi chú
+
+- ✅ C1–C10 xanh: **phần lệnh với stdout/stderr giả xong**.
+- **Mùi code cho Refactor:** `create.js` và `update.js` khai báo **cùng 5 option** giống hệt nhau → tách ra một chỗ.
+- Commit đề xuất: `feat(cli): add the update command`.

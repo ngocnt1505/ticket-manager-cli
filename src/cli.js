@@ -1,6 +1,6 @@
 const { parseArgs } = require('node:util');
 
-const { UsageError, NotFoundError } = require('./errors');
+const { UsageError, ValidationError, NotFoundError } = require('./errors');
 
 const COMMANDS = {
   create: require('./commands/create'),
@@ -19,10 +19,12 @@ function run(argv, io) {
     command.execute(parsed, { store: io.store, now: io.now(), print: io.stdout });
     return 0;
   } catch (err) {
-    if (err instanceof UsageError) {
+    // Wrong command line or invalid value: visible from the command alone → 2.
+    if (err instanceof UsageError || err instanceof ValidationError) {
       io.stderr(`Error: ${err.message}`);
       return 2;
     }
+    // Depends on the stored data → 1.
     if (err instanceof NotFoundError) {
       io.stderr(`Error: ${err.message}`);
       return 1;
