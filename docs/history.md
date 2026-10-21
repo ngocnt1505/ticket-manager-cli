@@ -2313,3 +2313,42 @@ function serializeTickets(tickets) {
 - ✅ D1–D6 xanh.
 - **P3 (Phát sinh, chờ quyết định):** file là mảng nhưng phần tử hỏng (`[1]`, `[null]`, thiếu `id`, `id` trùng) hiện **lọt qua** `parseTickets` → lỗi xuất hiện muộn và khó hiểu (ví dụ `create` sinh id `NaN`, `update` sửa nhầm khi id trùng). Cân nhắc: chỉ kiểm tra `id` (thứ cả chương trình dựa vào), không kiểm tra mọi trường – tránh over-testing (Report §6.1).
 - Commit đề xuất: `feat(storage): parse and serialize the ticket file`.
+
+> **Cập nhật Bước 42:** Ngọc commit và push `2f7301e feat(storage): parse and serialize the ticket file`.
+
+---
+
+## Bước 43 – P3 (phần tử hỏng trong file → `CORRUPTED_FILE`): Ngọc quyết định làm; bước Red
+
+**Thời gian:** 2026-10-21 · **Người làm:** Ngọc quyết định; Claude viết test (theo yêu cầu); Ngọc review và commit · **Commit:** chưa
+
+### What
+
+Thêm test P3: 6 dạng mảng có phần tử hỏng đều phải bị `parseTickets` từ chối với `CORRUPTED_FILE`.
+
+### Why
+
+- Ngọc chọn **làm, chỉ kiểm tra `id`** (giữa: làm / bỏ và ghi vào giới hạn đã biết).
+- `id` là thứ **cả chương trình dựa vào**: `create` lấy id lớn nhất + 1, `findTicket`/`updateTicket` tìm theo id. Id hỏng → lỗi xuất hiện muộn, khó hiểu (`NaN`, sửa nhầm ticket). Phát hiện **ngay khi đọc file** thì thông báo rõ: file nào, hỏng gì.
+- **Không** kiểm tra title, status… của từng ticket: dữ liệu do chính chương trình ghi đã đi qua validate; kiểm tra lại mọi trường là over-testing (Report §6.1).
+- 6 giá trị thử: `[1]`, `[null]` (không phải object), thiếu `id`, `id` là chuỗi `"1"`, `id` là `0`, `id` trùng. Tham số thứ ba của `assert.throws` (`text`) → khi đỏ, thông báo chỉ ra **giá trị nào** lọt.
+
+### How
+
+```js
+test('P3: entries without a unique positive integer id fail with CORRUPTED_FILE', () => {
+  for (const text of ['[1]', '[null]', '[{"title":"no id"}]', '[{"id":"1"}]', '[{"id":0}]', '[{"id":1},{"id":1}]']) {
+    assert.throws(() => parseTickets(text, 'tickets.json'), corrupted, text);
+  }
+});
+```
+
+```
+✖ P3  AssertionError: Missing expected exception (StorageError): [1]
+ℹ tests 56 · pass 55 · fail 1
+```
+
+### Kết quả / Ghi chú
+
+- ✅ Đỏ đúng lý do; thông báo chỉ rõ giá trị đầu tiên lọt qua (`[1]`).
+- Commit đề xuất: `test(storage): add failing test for entries without a valid id`.

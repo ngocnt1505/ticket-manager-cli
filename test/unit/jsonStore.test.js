@@ -47,3 +47,9 @@ test('D6: Vietnamese text and emoji survive serialize then parse', () => {
   assert.match(text ?? '', /Sửa lỗi đăng nhập 😀/);
   assert.deepEqual(parseTickets(text ?? '', 'tickets.json'), tickets);
 });
+
+test('P3: entries without a unique positive integer id fail with CORRUPTED_FILE', () => {
+  for (const text of ['[1]', '[null]', '[{"title":"no id"}]', '[{"id":"1"}]', '[{"id":0}]', '[{"id":1},{"id":1}]']) {
+    assert.throws(() => parseTickets(text, 'tickets.json'), corrupted, text);
+  }
+});
