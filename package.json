@@ -1,8 +1,8 @@
 {
   "name": "ticket-manager-cli",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Ticket Manager CLI: create, list, show and update tickets stored in a local JSON file (built with TDD)",
+  "main": "src/cli.js",
   "bin": {
     "tickets": "./bin/tickets.js"
   },
@@ -15,8 +15,8 @@
   "engines": {
     "node": ">=22"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": ["cli", "tickets", "tdd"],
+  "author": "Nguyen Thuy Ngoc",
   "license": "ISC",
   "type": "commonjs"
 }

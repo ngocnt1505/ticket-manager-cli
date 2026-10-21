@@ -3613,3 +3613,79 @@ test('P8: update --tags confirms the stored tags, or (none) when they are remove
 
 - ✅ Hai lỗ hổng của Giai đoạn 6 đã được lấp; số liệu mới sẽ được ghi lại vào `TEST-RESULTS.md` sau khi push (để bước clone sạch kiểm tra đúng commit cuối).
 - Commit đề xuất: `test: cover invalid status on create and the update tags message`.
+
+> **Cập nhật Bước 64:** Ngọc commit và push `c2290a0 test: cover invalid status on create and the update tags message`.
+
+---
+
+## Bước 65 – Kiểm tra lần cuối trước khi nộp
+
+**Thời gian:** 2026-10-21 · **Người làm:** Claude kiểm tra và sửa (theo yêu cầu); Ngọc review và commit · **Commit:** chưa
+
+### What
+
+1. **Clone sạch** từ GitHub ở commit cuối (`c2290a0`, 61 commit) và làm lại toàn bộ ví dụ trong README.
+2. **Rà repo:** danh sách file, file ngoài git, link tương đối trong mọi file `.md`, chữ treo (TODO, "chờ quyết định"), `package.json`.
+3. Sửa `package.json`; viết lại `docs/TEST-RESULTS.md` với số liệu cuối.
+
+### How – kết quả
+
+| Kiểm tra | Kết quả |
+|---|---|
+| Clone sạch + `npm test` | 86 / 86 pass |
+| Làm theo README (create, list, lọc, show, update `--tags`, `--tags=`, các lỗi) | Mọi output khớp README; exit code đúng; `git status` sạch sau khi chạy |
+| File trong repo | 28 file, không có file thừa, không còn `tickets.json` / file tạm |
+| Link tương đối trong mọi `.md` | Đúng hết, trừ 1 link trong **`docs/overvieww2.md`** (`../../../slides-ai-training.md`) – đó là đề bài gốc chép nguyên văn, **giữ nguyên** không sửa |
+| Mục treo trong `TEST-LIST.md`, TODO trong code | Không còn |
+| `package.json` | `"main": "index.js"` trỏ tới file **không tồn tại**; `description`, `author`, `keywords` trống → sửa: `main` = `src/cli.js`, thêm mô tả, tác giả, từ khóa. Chạy lại: 86/86 |
+
+**`docs/TEST-RESULTS.md`** viết lại theo commit `c2290a0`: 86 test (70 unit · 16 integration) · coverage 100 % / 100 % / 100 % · mutation 10/10 · clone sạch · 7/7 Acceptance Criteria · 61 commit (27 `test`, 22 `feat`, 1 `fix`, 4 `refactor`, 6 `docs`). Mục 5 giữ bảng **trước / sau** để thấy hai lỗ hổng P7, P8 đã được lấp thế nào.
+
+### Kết quả / Ghi chú
+
+- ✅ Repo sẵn sàng nộp sau commit này.
+- Ghi chú về nhật ký: dòng "**Commit:** chưa" ở đầu mỗi bước là trạng thái **lúc viết bước đó**; commit thật của từng bước được ghi ở dòng "Cập nhật Bước …" ngay sau, và có thể đối chiếu bằng `git log`.
+- Commit đề xuất: `chore: final checks before submission`.
+
+---
+
+## Tổng kết làm việc với AI
+
+Thay cho file `AI-LOG.md` riêng (quyết định của Ngọc), phần này tổng hợp từ dòng **"Người làm"** của 66 bước ở trên.
+
+### Ai làm gì
+
+| | Ngọc | Claude (Claude Code) |
+|---|---|---|
+| **Kế hoạch** | Kế hoạch 7 giai đoạn; yêu cầu làm lại từ đầu với vai trò người lái (Bước 0) | Đề xuất chia nhỏ vòng TDD (gom nhóm theo hành vi) |
+| **Thiết kế** | Chọn mọi quyết định còn mở: lọc tag AND, `update` 5 trường, tag chữ thường, không tự tạo thư mục, `--tags` thay thế, service là hàm thuần trên mảng; xác nhận 7 đề xuất | Đưa phương án kèm ưu/nhược điểm; soạn `DECISIONS.md`, `TEST-LIST.md` |
+| **Code và test** | Viết test M1, M2 và `src/errors.js` đầu tiên; review từng bước | Viết phần lớn test, stub và code từ M3 trở đi, theo yêu cầu "làm giúp, tôi review và commit" |
+| **Phát sinh** | Quyết định làm / không làm cho cả 8 mục P1–P8 (đều chọn làm) | Phát hiện và đề xuất P1–P8 (khi viết test, bằng mutation, coverage, chạy tay) |
+| **Git** | **Mọi commit và push** (61 commit tính tới `c2290a0`); tạo repo GitHub | Không commit lần nào trong lần làm lại này |
+| **Kiểm tra** | Chạy `npm link` và các lệnh bằng tay (Bước 60) | Mutation testing, coverage, clone sạch, rà repo |
+| **Tài liệu** | Xóa tài liệu tuần 1 khỏi repo, chọn trỏ sang repo tuần 1 | Soạn `README.md`, `TEST-RESULTS.md`, nhật ký này |
+
+### Những lần không nhận nguyên đề xuất của AI
+
+- **`--tags` khi update (Bước 5):** trong 7 đề xuất, Ngọc không tick mục "`--tags` thay thế toàn bộ" → yêu cầu xem phương án khác → so sánh 3 cách (thay thế / cộng thêm / tách `--add-tags` + `--remove-tags`) rồi mới chọn.
+- **Không dùng `AI-LOG.md`:** Ngọc hỏi lại sự cần thiết của một mục trong chính kế hoạch của mình, so với Acceptance Criteria, và chọn ghi gọn vào nhật ký.
+- **Phạm vi P3:** chọn "chỉ kiểm tra `id`" thay vì kiểm tra mọi trường – tránh over-testing.
+
+### Những lần code / khẳng định của AI sai và được kiểm chứng lại
+
+| Bước | Sai sót của AI | Phát hiện bằng | Xử lý |
+|---|---|---|---|
+| 32 | Một mutation bị chạy sai (chuỗi `\n` làm file lỗi cú pháp), suýt kết luận sai | Kiểm tra lại chính mutation trước khi đọc kết quả | Chạy lại đúng → lỗ hổng thật → **P2** |
+| 48 | Biến `wroteTmp` do AI viết là **code thừa** | Mutation không bị bắt → phân tích | Bỏ biến, rút gọn code |
+| 48 | Test D10 do AI viết **thiếu một assertion**: `save` có thể xóa thư mục người dùng mà không test nào đỏ | Mutation `recursive: true` | Bổ sung assertion |
+| 52 | Mutation bị Git Bash đổi thành đường dẫn Windows | Bước `require` trong script mutation báo lỗi cú pháp | Chạy lại với `MSYS_NO_PATHCONV=1` |
+| 57 | Code AI viết crash với `tickets toString`, lộ stack trace | **Chạy tay** với input "lạ" | **P6** |
+| 60 | README / thiết kế không lường trước PowerShell biến `--tags bug,ui` thành một tag | **Ngọc chạy `npm link` bằng tay**, output lộ ra `[bug ui]` | Ghi giới hạn, mọi ví dụ README đặt trong nháy |
+| 62 | Bản nháp `TEST-RESULTS.md` có con số ước lượng chưa đếm ("khoảng 40 mutation") | Rà lại trước khi giao | Bỏ con số |
+| 62 | Bộ test (AI viết) thiếu test `create` với status sai | Mutation đợt cuối | **P7** |
+
+### Nhận xét trung thực
+
+- Phần lớn code và test do AI viết; vai trò của Ngọc chủ yếu là **người quyết định, người review và người commit**. Khi bảo vệ, Ngọc cần giải thích được từng quyết định trong `DECISIONS.md` và lý do đỏ của ít nhất một vòng TDD (ví dụ vòng title, Bước 6–16).
+- Mọi khẳng định "đã xanh / đã bắt được" của AI đều đi kèm **output chạy thật** trong nhật ký – đúng nguyên tắc tuần 1 (Report §5.4): không tin câu "đã chạy", tự chạy lại.
+- Bài học lớn nhất: **mỗi lớp kiểm chứng bắt được thứ lớp khác bỏ sót** – bước Red bắt xanh giả; mutation bắt test thiếu và code thừa; coverage bắt nhánh chưa test; chạy tay và `npm link` bắt lỗi môi trường mà test tự động không đi qua.
