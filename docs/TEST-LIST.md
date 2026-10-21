@@ -24,10 +24,10 @@ Danh sách kịch bản cần test, viết **trước khi code** (Canon TDD, Rep
 
 ### Status và priority
 
-- [ ] **M7** Status nhận `open`, `in_progress`, `done` *(W1)*
-- [ ] **M8** Status sai (`closed`, `OPEN`, `''`) → lỗi `INVALID_STATUS`, thông báo liệt kê giá trị hợp lệ *(W1)*
-- [ ] **M9** Priority nhận `low`, `medium`, `high` *(mới)*
-- [ ] **M10** Priority sai (`urgent`, `High`, `''`) → lỗi `INVALID_PRIORITY` *(mới)*
+- [x] **M7** Status nhận `open`, `in_progress`, `done` *(W1)*
+- [x] **M8** Status sai (`closed`, `OPEN`, `''`) → lỗi `INVALID_STATUS`, thông báo liệt kê giá trị hợp lệ *(W1)*
+- [x] **M9** Priority nhận `low`, `medium`, `high` *(mới)*
+- [x] **M10** Priority sai (`urgent`, `High`, `''`) → lỗi `INVALID_PRIORITY` *(mới)*
 
 ### Description
 

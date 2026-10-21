@@ -889,3 +889,62 @@ test('M8: rejects other status values with INVALID_STATUS and lists the allowed 
 
 - ✅ Cả 4 test đỏ vì **AssertionError** (stub trả `undefined` / không ném lỗi) → đỏ đúng lý do. 6 test Title vẫn xanh.
 - Commit đề xuất: `test(models): add failing tests for status and priority`.
+
+> **Cập nhật Bước 17:** Ngọc commit `5ff8d79 test(models): add failing tests for status and priority`.
+
+---
+
+## Bước 18 – Vòng 2: bước Green (`validateStatus`, `validatePriority`)
+
+**Thời gian:** 2026-10-21 · **Người làm:** Claude viết code (theo yêu cầu); Ngọc review và commit · **Commit:** chưa
+
+### What
+
+Thay 2 stub bằng code thật; đánh dấu `[x]` M7–M10 trong `TEST-LIST.md`.
+
+### Why
+
+- Green viết **theo cách thẳng nhất**: mỗi hàm tự có danh sách giá trị và tự ném lỗi, dù hai hàm gần như giống hệt nhau. Gộp lại là việc của bước **Refactor** – không vừa làm xanh vừa thiết kế lại trong cùng một bước (Report §6.5).
+- `allowed.includes(x)` so khớp **chính xác** → `'OPEN'`, `'High'` tự động bị từ chối, không cần code riêng.
+- Câu thông báo đưa cả giá trị người dùng gõ (`"OPEN"`) và danh sách hợp lệ → người dùng biết ngay sai ở đâu, sửa thế nào.
+
+### How
+
+```js
+function validateStatus(status) {
+  const allowed = ['open', 'in_progress', 'done'];
+  if (!allowed.includes(status)) {
+    throw new ValidationError(
+      'INVALID_STATUS',
+      `Invalid status "${status}". Allowed values: ${allowed.join(', ')}`,
+    );
+  }
+  return status;
+}
+
+function validatePriority(priority) {
+  const allowed = ['low', 'medium', 'high'];
+  if (!allowed.includes(priority)) {
+    throw new ValidationError(
+      'INVALID_PRIORITY',
+      `Invalid priority "${priority}". Allowed values: ${allowed.join(', ')}`,
+    );
+  }
+  return priority;
+}
+```
+
+```
+ℹ tests 10 · pass 10 · fail 0   (exit 0)
+
+INVALID_STATUS   | Invalid status "OPEN". Allowed values: open, in_progress, done
+INVALID_PRIORITY | Invalid priority "urgent". Allowed values: low, medium, high
+```
+
+**Mutation thủ công:** bỏ `'in_progress'` khỏi danh sách status → ✖ M7 (giá trị hợp lệ bị từ chối), ✖ M8 (thông báo thiếu `in_progress`) – `pass 8 · fail 2`. Khôi phục → 10/10.
+
+### Kết quả / Ghi chú
+
+- ✅ M7–M10 xanh. `TEST-LIST.md`: 10/77.
+- **Mùi code (code smell) để Refactor:** hai hàm trùng nhau gần như từng dòng, chỉ khác danh sách, mã lỗi và tên trường. Bước tiếp theo sẽ gộp thành một hàm dùng chung và đưa hai danh sách lên thành hằng số (để sau này `list --status` và trang help dùng lại được).
+- Commit đề xuất: `feat(models): validate status and priority`.
