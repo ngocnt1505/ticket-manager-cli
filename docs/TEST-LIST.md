@@ -16,7 +16,7 @@ Danh sách kịch bản cần test, viết **trước khi code** (Canon TDD, Rep
 ### Title
 
 - [x] **M1** Title hợp lệ được trim: `'  Fix login  '` → `'Fix login'` *(W1)*
-- [ ] **M2** Title rỗng hoặc toàn khoảng trắng (`''`, `'   '`, `'\t\n'`) → lỗi `EMPTY_TITLE` *(W1)*
+- [x] **M2** Title rỗng hoặc toàn khoảng trắng (`''`, `'   '`, `'\t\n'`) → lỗi `EMPTY_TITLE` *(W1)*
 - [ ] **M3** Title đúng 100 ký tự → hợp lệ *(W1, biên)*
 - [ ] **M4** Title 101 ký tự → lỗi `TITLE_TOO_LONG` *(W1, biên)*
 - [ ] **M5** Độ dài tính **sau khi trim**: 100 ký tự + khoảng trắng hai đầu → hợp lệ *(W1)*

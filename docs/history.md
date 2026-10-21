@@ -470,3 +470,66 @@ test('M2: rejects an empty or whitespace-only title with EMPTY_TITLE', () => {
 
 - ✅ Đỏ đúng lý do: `''.trim()` trả về `''` và không ném lỗi → `Missing expected exception`.
 - M1 vẫn xanh → thêm test mới không làm hỏng test cũ.
+
+> **Cập nhật Bước 9:** Ngọc commit bước Red: `436a224 test(models): add failing test for empty title` (commit **trước** khi viết code Green).
+
+---
+
+## Bước 10 – Vòng TDD M2: bước Green (tạo `ValidationError`, từ chối title rỗng)
+
+**Thời gian:** 2026-10-21 · **Người làm:** Ngọc tạo `src/errors.js`; Claude sửa `ticket.js` (theo yêu cầu) · **Commit:** chưa
+
+### What
+
+- `src/errors.js` (Ngọc tạo): lớp `ValidationError` kế thừa `Error`, có `name = 'ValidationError'` và `code` truyền vào khi tạo.
+- `src/models/ticket.js` (Claude sửa): trim → kiểm tra rỗng → trả về.
+- Đánh dấu `[x] M2` trong `TEST-LIST.md`.
+
+### Why
+
+- **Lớp lỗi riêng** thay vì `throw new Error(...)`: `name` giúp phân biệt lỗi do người dùng nhập sai với lỗi lập trình (`TypeError`…); `code` là mã cố định để test kiểm tra và để tầng CLI sau này chọn exit code 2.
+- **Kiểm tra trên `clean` (sau trim), không phải `title`**: `'   '` khác rỗng nhưng sau trim là rỗng.
+- **Chưa thêm giới hạn 100 ký tự**: chưa có test nào yêu cầu (M3, M4 ở vòng sau).
+
+### How
+
+```js
+// src/errors.js
+class ValidationError extends Error {
+  constructor(code, message) {
+    super(message);
+    this.name = 'ValidationError';
+    this.code = code;
+  }
+}
+
+module.exports = { ValidationError };
+```
+
+```js
+// src/models/ticket.js
+const { ValidationError } = require('../errors');
+
+function validateTitle(title) {
+  const clean = title.trim();
+  if (!clean) throw new ValidationError('EMPTY_TITLE', 'Title is required');
+  return clean;
+}
+
+module.exports = { validateTitle };
+```
+
+```
+✔ M1: trims a valid title
+✔ M2: rejects an empty or whitespace-only title with EMPTY_TITLE
+ℹ tests 2 · pass 2 · fail 0   (exit 0)
+```
+
+**Mutation thủ công:** đổi `if (!clean)` thành `if (!title)` (kiểm tra chuỗi **chưa** trim) → `✖ M2 · fail 1`, vì `'   '` và `'\t\n'` không rỗng nên lọt qua. Khôi phục → `pass 2`. Chứng minh việc thử **3 giá trị** trong test M2 là cần thiết: nếu chỉ thử `''` thì mutation này không bị phát hiện.
+
+### Kết quả / Ghi chú
+
+- ✅ M2 xanh. `TEST-LIST.md`: 2/77.
+- Refactor: chưa cần (hàm 3 dòng, chưa có trùng lặp).
+- VS Code gợi ý *"File is a CommonJS module; it may be converted to an ES module"* – chỉ là gợi ý (Hint), không phải lỗi. Dự án đã chọn CommonJS (`"type": "commonjs"` trong `package.json`), giữ nguyên.
+- Ghi `AI-LOG.md`: `ticket.js` vòng này do Claude sửa.
