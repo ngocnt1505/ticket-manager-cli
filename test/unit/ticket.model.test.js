@@ -5,6 +5,7 @@ const {
   validateTitle,
   validateStatus,
   validatePriority,
+  validateDescription,
 } = require('../../src/models/ticket');
 
 test('M1: trims a valid title', () => {
@@ -77,6 +78,32 @@ test('M10: rejects other priority values with INVALID_PRIORITY', () => {
     assert.throws(() => validatePriority(bad), {
       name: 'ValidationError',
       code: 'INVALID_PRIORITY',
+    });
+  }
+});
+
+test('M11: a missing description becomes an empty string', () => {
+  assert.equal(validateDescription(undefined), '');
+});
+
+test('M12: trims the description', () => {
+  assert.equal(validateDescription('  Steps to reproduce  '), 'Steps to reproduce');
+});
+
+test('M13: accepts 1000 characters and rejects 1001 with DESCRIPTION_TOO_LONG', () => {
+  const max = 'd'.repeat(1000);
+  assert.equal(validateDescription(max), max);
+  assert.throws(() => validateDescription('d'.repeat(1001)), {
+    name: 'ValidationError',
+    code: 'DESCRIPTION_TOO_LONG',
+  });
+});
+
+test('M14: rejects a non-string description with INVALID_DESCRIPTION', () => {
+  for (const bad of [null, 7, {}]) {
+    assert.throws(() => validateDescription(bad), {
+      name: 'ValidationError',
+      code: 'INVALID_DESCRIPTION',
     });
   }
 });

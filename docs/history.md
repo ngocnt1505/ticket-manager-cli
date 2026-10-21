@@ -1010,3 +1010,62 @@ Chứng minh hành vi không đổi:
 - VS Code từng báo *"Could not find name 'STATUSES'"* – do xem file ở trạng thái **giữa hai lần sửa** (đã dùng hằng nhưng chưa khai báo). Sau khi thêm khai báo, test chạy đúng → không phải lỗi thật. Bài học: chỉ tin kết quả **chạy test** sau khi sửa xong, không tin cảnh báo trung gian.
 - Commit đề xuất: `refactor(models): share enum validation for status and priority`.
 - Tiếp theo: **vòng 3 – description (M11–M14)**.
+
+> **Cập nhật Bước 19:** Ngọc commit và push `2aa9f24 refactor(models): share enum validation for status and priority`. **Vòng 2 (M7–M10) hoàn tất.**
+
+---
+
+## Bước 20 – Vòng 3 (description – M11–M14): bước Red
+
+**Thời gian:** 2026-10-21 · **Người làm:** Claude viết test + stub (theo yêu cầu); Ngọc review và commit · **Commit:** chưa
+
+### What
+
+- Thêm 4 test: M11 (không có → `''`), M12 (trim), M13 (biên 1000 / 1001 → `DESCRIPTION_TOO_LONG`), M14 (không phải chuỗi → `INVALID_DESCRIPTION`).
+- Thêm stub rỗng `validateDescription` và export.
+
+### Why
+
+- Description **không bắt buộc** (khác title): thiếu thì là `''` chứ không lỗi. Nhưng `null`, số, object là **dữ liệu sai kiểu** → lỗi, để phân biệt "không nhập" (`undefined`) với "nhập sai".
+- **M13 gộp hai biên trong một test**: rút kinh nghiệm từ M3/M4 (Bước 12–13) – thiếu test "đúng 1000" thì lỗi `>=` lọt qua. Đặt cả 1000 (hợp lệ) và 1001 (lỗi) trong cùng test để không bao giờ tách rời.
+- Dùng `'d'.repeat(…)` như title – chắc chắn đúng độ dài.
+
+### How
+
+```js
+test('M11: a missing description becomes an empty string', () => {
+  assert.equal(validateDescription(undefined), '');
+});
+
+test('M12: trims the description', () => {
+  assert.equal(validateDescription('  Steps to reproduce  '), 'Steps to reproduce');
+});
+
+test('M13: accepts 1000 characters and rejects 1001 with DESCRIPTION_TOO_LONG', () => {
+  const max = 'd'.repeat(1000);
+  assert.equal(validateDescription(max), max);
+  assert.throws(() => validateDescription('d'.repeat(1001)), {
+    name: 'ValidationError',
+    code: 'DESCRIPTION_TOO_LONG',
+  });
+});
+
+test('M14: rejects a non-string description with INVALID_DESCRIPTION', () => {
+  for (const bad of [null, 7, {}]) {
+    assert.throws(() => validateDescription(bad), {
+      name: 'ValidationError',
+      code: 'INVALID_DESCRIPTION',
+    });
+  }
+});
+```
+
+```
+✖ M11 · ✖ M12 · ✖ M13 · ✖ M14   – đều AssertionError (stub trả undefined / không ném lỗi)
+ℹ tests 14 · pass 10 · fail 4
+```
+
+### Kết quả / Ghi chú
+
+- ✅ Đỏ đúng lý do; 10 test cũ vẫn xanh.
+- Commit đề xuất: `test(models): add failing tests for description`.

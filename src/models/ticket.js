@@ -38,10 +38,13 @@ function validatePriority(priority) {
   return oneOf(priority, PRIORITIES, 'INVALID_PRIORITY', 'priority');
 }
 
+function validateDescription(description) {}
+
 module.exports = {
   STATUSES,
   PRIORITIES,
   validateTitle,
   validateStatus,
   validatePriority,
+  validateDescription,
 };
