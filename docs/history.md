@@ -3439,3 +3439,42 @@ So sánh 3 cách gọi trong PowerShell (Claude chạy lại để chứng minh)
 - ⚠️ Phát hiện **vấn đề môi trường** chỉ chạy tay mới thấy: test tự động gọi Node trực tiếp nên không đi qua shim PowerShell. Bài học: test tự động chứng minh chương trình đúng **với input nó nhận được**; chạy tay cho thấy input **thật** người dùng gửi tới có thể khác.
 - Việc cho Giai đoạn 5 (README): ví dụ PowerShell luôn đặt `--tags` trong nháy; thêm vào "Giới hạn đã biết".
 - Gỡ lệnh khi không cần: `npm unlink -g ticket-manager-cli`.
+
+> **Cập nhật Bước 60:** Ngọc commit và push `5f2d231 docs: log manual run with npm link`. **Giai đoạn 4 hoàn tất.**
+
+---
+
+## Bước 61 – Giai đoạn 5: viết `README.md`, cập nhật `docs/README.md`
+
+**Thời gian:** 2026-10-21 · **Người làm:** Claude soạn (theo yêu cầu); Ngọc review và commit · **Commit:** chưa
+
+### What
+
+- `README.md` ở thư mục gốc, đủ các mục kế hoạch Giai đoạn 5: giới thiệu ngắn · cài đặt (`git clone`, `npm link`) · cấu hình (`TICKETS_FILE`, đường dẫn mặc định) · cách dùng từng lệnh có output mẫu · bảng exit code · chạy test (`npm test`, `npm run coverage`) · cấu trúc thư mục · link tới `docs/` · **giới hạn đã biết**.
+- `docs/README.md`: mục lục `docs/` cho cả tuần 1 và tuần 2 (bản cũ chỉ có tuần 1 và trỏ tới file `overview.md` không tồn tại).
+
+### Why
+
+- README là thứ người khác (mentor, người dùng) đọc **đầu tiên** → viết bằng tiếng Anh, cùng ngôn ngữ với README tuần 1 và với code.
+- **Mọi output mẫu là output thật**: chạy chương trình trong một thư mục tạm, chép nguyên văn (kể cả thông báo lỗi và exit code). Số liệu test cũng chạy thật: `test:unit` 68, `test:integration` 16, coverage 100 % dòng / 99,31 % nhánh.
+- **Mọi ví dụ `--tags` đặt trong nháy** (`--tags "bug,auth"`) – rút từ phát hiện ở Bước 60: chạy đúng trên cả bash lẫn PowerShell.
+- Bảng **"tham số → ý nghĩa"** cho các trường ticket và bảng exit code lấy từ `DECISIONS.md`, để người dùng không phải đọc tài liệu thiết kế.
+
+### How – giới hạn đã biết được ghi
+
+| Giới hạn | Nguồn |
+|---|---|
+| Chỉ một lệnh chạy tại một thời điểm (không khóa file) | kế hoạch Giai đoạn 5 |
+| PowerShell: `--tags bug,ui` không nháy → một tag `"bug ui"` | phát hiện khi chạy tay, Bước 60 |
+| Độ dài title đếm theo UTF-16 (emoji = 2) | `DECISIONS.md` §3, Report tuần 1 |
+| Không có lệnh xóa; không sửa được `id`, `createdAt` | thiết kế |
+| `TICKETS_FILE` là symlink → bị thay bằng file thường (chưa test được) | Report tuần 1 A.3; máy Windows không tạo được symlink |
+| Không `fsync` → mất điện ngay sau khi lưu có thể mất thay đổi cuối | Report tuần 1 A.2 (ý chưa kiểm chứng) |
+
+**Kiểm tra:** mọi link tương đối trong hai README đều trỏ tới file có thật (14/14 OK).
+
+### Kết quả / Ghi chú
+
+- ✅ Giai đoạn 5 xong, chờ Ngọc review.
+- Commit đề xuất: `docs: add README with installation, configuration and usage`.
+- Tiếp theo: **Giai đoạn 6 – kiểm tra trước khi nộp** (`TEST-RESULTS.md`, coverage, tổng hợp mutation, clone sạch làm theo README, đối chiếu 7 Acceptance Criteria, kiểm tra `git log`).
