@@ -1465,3 +1465,76 @@ function buildTicket(input, { id, now }) {
 - ✅ **Vòng 5a hoàn tất** sau commit này. `TEST-LIST.md`: 23 mục `[x]`.
 - Commit đề xuất: `feat(models): build a ticket with defaults`.
 - Tiếp theo: **vòng 5b – `applyUpdate` (M23–M27)**; lưu ý bẫy "xanh giả" với test "không sửa ticket gốc" (M24).
+
+> **Cập nhật Bước 27:** Ngọc commit và push `e97d1aa feat(models): build a ticket with defaults`. **Vòng 5a hoàn tất.**
+
+---
+
+## Bước 28 – Vòng 5b (`applyUpdate` – M23–M27): bước Red; chặn trước một "xanh giả"
+
+**Thời gian:** 2026-10-21 · **Người làm:** Claude viết test + stub (theo yêu cầu); Ngọc review và commit · **Commit:** chưa
+
+### What
+
+- Thêm 5 test cho `applyUpdate(ticket, changes, now)` và stub rỗng.
+- **Trước khi viết M24, chạy thử một bản test "ngây thơ"** để chứng minh nó xanh giả với stub.
+
+### Why
+
+- Ticket dùng trong test được tạo bằng `buildTicket` (đã xanh ở 5a) → dữ liệu thật, đúng hình dạng.
+- **M23 dùng `{ ...ticket, status: 'done', updatedAt: … }`:** khẳng định *chỉ* `status` và `updatedAt` đổi; `id`, `createdAt`, title… giữ nguyên.
+- **M24 thêm `tags: 'ui'`:** đồng thời kiểm tra quyết định "`--tags` thay thế toàn bộ" (`DECISIONS.md` §5): tags cũ `['bug','auth']` → `['ui']`.
+- **M25 "không đổi một nửa":** `status` hợp lệ nhưng `priority` sai → phải từ chối **cả** lần cập nhật; ticket gốc không được mang `status: 'done'`.
+- **M26** dùng chung mã `UNKNOWN_FIELD` cho cả trường được bảo vệ (`id`, `createdAt`, `updatedAt`) lẫn trường lạ (`owner`): với người gọi, cả hai đều là "trường này không sửa được".
+
+### How – bẫy "xanh giả" ở M24
+
+Bản ngây thơ chỉ kiểm tra "ticket gốc không đổi", chạy với stub **không làm gì**:
+
+```js
+function applyUpdate() {} // stub
+test('naive M24: does not modify the original ticket', () => {
+  const ticket = buildTicket({ title: 'Fix login' }, { id: 1, now: new Date() });
+  const snapshot = structuredClone(ticket);
+  applyUpdate(ticket, { status: 'done' }, new Date());
+  assert.deepEqual(ticket, snapshot);
+});
+```
+
+```
+✔ naive M24: does not modify the original ticket
+ℹ pass 1 · fail 0          ← XANH dù chưa có code
+```
+
+Stub không đụng tới ticket nên "không đổi" hiển nhiên đúng – test không chứng minh gì. **Cách sửa:** thêm **điều kiện tiền đề** – cập nhật phải thực sự xảy ra:
+
+```js
+test('M24: an update returns a new ticket and leaves the original untouched', () => {
+  const ticket = existingTicket();
+  const snapshot = structuredClone(ticket);
+  const updated = applyUpdate(ticket, { status: 'done', tags: 'ui' }, LATER);
+  // Precondition: the update really happened; otherwise "unchanged" proves nothing.
+  assert.equal(updated?.status, 'done');
+  assert.deepEqual(updated.tags, ['ui']);
+  assert.deepEqual(ticket, snapshot);
+});
+```
+
+`updated?.status` (optional chaining) → stub trả `undefined` thì ra `AssertionError` chứ không `TypeError`.
+
+**Kết quả chạy với stub:**
+
+```
+✖ M23  AssertionError: Expected values to be strictly deep-equal
+✖ M24  AssertionError: Expected values to be strictly equal      ← không còn xanh giả
+✖ M25  AssertionError: Missing expected exception (ValidationError)
+✖ M26  AssertionError: Missing expected exception (ValidationError)
+✖ M27  AssertionError: Missing expected exception (ValidationError)
+ℹ tests 28 · pass 23 · fail 5
+```
+
+### Kết quả / Ghi chú
+
+- ✅ Cả 5 đỏ đúng lý do; 23 test cũ vẫn xanh.
+- Bài học (đối chiếu Report §5.3): với test kiểu "**không có gì thay đổi**", phải chắc chắn **có gì đó đã được thử thay đổi** – nếu không, code không làm gì cũng qua.
+- Commit đề xuất: `test(models): add failing tests for updating a ticket`.

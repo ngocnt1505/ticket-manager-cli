@@ -91,6 +91,8 @@ function buildTicket(input, { id, now }) {
   };
 }
 
+function applyUpdate(ticket, changes, now) {}
+
 module.exports = {
   STATUSES,
   PRIORITIES,
@@ -100,4 +102,5 @@ module.exports = {
   validateDescription,
   normalizeTags,
   buildTicket,
+  applyUpdate,
 };

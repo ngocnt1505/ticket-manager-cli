@@ -8,6 +8,7 @@ const {
   validateDescription,
   normalizeTags,
   buildTicket,
+  applyUpdate,
 } = require('../../src/models/ticket');
 
 test('M1: trims a valid title', () => {
@@ -182,5 +183,54 @@ test('M22: a ticket with every field uses the validated values', () => {
 
   assert.throws(() => buildTicket({ ...input, priority: 'urgent' }, { id: 7, now: NOW }), {
     code: 'INVALID_PRIORITY',
+  });
+});
+
+const LATER = new Date('2026-10-22T09:30:00.000Z');
+const existingTicket = () =>
+  buildTicket({ title: 'Fix login', tags: 'bug,auth' }, { id: 3, now: NOW });
+
+test('M23: an update changes only the given field and refreshes updatedAt', () => {
+  const ticket = existingTicket();
+  assert.deepEqual(applyUpdate(ticket, { status: 'done' }, LATER), {
+    ...ticket,
+    status: 'done',
+    updatedAt: '2026-10-22T09:30:00.000Z',
+  });
+});
+
+test('M24: an update returns a new ticket and leaves the original untouched', () => {
+  const ticket = existingTicket();
+  const snapshot = structuredClone(ticket);
+  const updated = applyUpdate(ticket, { status: 'done', tags: 'ui' }, LATER);
+  // Precondition: the update really happened; otherwise "unchanged" proves nothing.
+  assert.equal(updated?.status, 'done');
+  assert.deepEqual(updated.tags, ['ui']);
+  assert.deepEqual(ticket, snapshot);
+});
+
+test('M25: one invalid value rejects the whole update (no half update)', () => {
+  const ticket = existingTicket();
+  const snapshot = structuredClone(ticket);
+  assert.throws(() => applyUpdate(ticket, { status: 'done', priority: 'urgent' }, LATER), {
+    name: 'ValidationError',
+    code: 'INVALID_PRIORITY',
+  });
+  assert.deepEqual(ticket, snapshot);
+});
+
+test('M26: id, createdAt, updatedAt and unknown fields cannot be updated', () => {
+  for (const field of ['id', 'createdAt', 'updatedAt', 'owner']) {
+    assert.throws(() => applyUpdate(existingTicket(), { [field]: 'x' }, LATER), {
+      name: 'ValidationError',
+      code: 'UNKNOWN_FIELD',
+    });
+  }
+});
+
+test('M27: an update without any field fails with NO_CHANGES', () => {
+  assert.throws(() => applyUpdate(existingTicket(), {}, LATER), {
+    name: 'ValidationError',
+    code: 'NO_CHANGES',
   });
 });
