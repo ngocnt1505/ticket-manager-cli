@@ -10,7 +10,7 @@ module.exports = {
     tags: { type: 'string' },
   },
 
-  execute(values, { store, now, print }) {
+  execute({ values }, { store, now, print }) {
     if (values.title === undefined) {
       throw new UsageError('MISSING_TITLE', 'Missing required option --title');
     }

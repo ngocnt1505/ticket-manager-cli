@@ -2875,3 +2875,85 @@ test('C10: a malformed id exits 2; 1 and 42 are accepted as ids', () => {
 
 - ✅ Đỏ đúng lý do (cả 3 đều `AssertionError`); 68 test cũ vẫn xanh.
 - Commit đề xuất: `test(cli): add failing tests for the show command`.
+
+> **Cập nhật Bước 51:** Ngọc commit `afcfaa0 test(cli): add failing tests for the show command`.
+
+---
+
+## Bước 52 – Vòng 13: bước Green (`show`, `parseId`, exit 1 cho `NotFoundError`)
+
+**Thời gian:** 2026-10-21 · **Người làm:** Claude viết code (theo yêu cầu); Ngọc review và commit · **Commit:** chưa
+
+### What
+
+- `src/commands/parseId.js`: chuyển chuỗi id từ dòng lệnh thành số, sai định dạng → `UsageError('INVALID_ID')`.
+- `src/commands/show.js`: lệnh `show <id>` và hàm `formatDetails`.
+- `src/cli.js`:
+  - `execute` giờ nhận `{ values, positionals }` (lệnh `show` cần tham số vị trí `<id>`); sửa `create`, `list` theo;
+  - `NotFoundError` → **exit 1**;
+  - hàm `parseCommandLine` bọc lỗi của `util.parseArgs` thành `UsageError` → exit 2.
+- Đánh dấu `[x]` C5, C9, C10.
+
+### Why
+
+- **`parseId` dùng regex `^[1-9]\d*$`** (chỉ chữ số, không bắt đầu bằng 0) thay vì `parseInt`/`Number`: `parseInt('12abc')` = 12, `Number('1e2')` = 100, `Number('1.5')` = 1.5 – đều "lọt". Regex mô tả đúng hợp đồng `DECISIONS.md` §8.
+- **Tách `parseId` ra file riêng**: lệnh `update <id>` (vòng 14) sẽ dùng lại.
+- **Bọc lỗi `parseArgs`**: `show -1` → Node hiểu `-1` là option lạ và ném `ERR_PARSE_ARGS_UNKNOWN_OPTION`. Đó là dòng lệnh sai → exit 2, đúng như id sai định dạng.
+- **Exit 1 cho `NotFoundError`**: lần đầu tiên dùng tới quy tắc "phải đọc dữ liệu mới biết sai → 1".
+
+### How
+
+```js
+// src/commands/parseId.js
+// Digits only, no leading zero: rejects "0", "-1", "1.5", "1e2", "12abc", "abc".
+const ID_PATTERN = /^[1-9]\d*$/;
+
+function parseId(text) {
+  if (typeof text !== 'string' || !ID_PATTERN.test(text)) {
+    throw new UsageError(
+      'INVALID_ID',
+      `Invalid ticket id "${text ?? ''}". Use a positive whole number, for example 1.`,
+    );
+  }
+  return Number(text);
+}
+```
+
+```js
+// src/cli.js – trong catch của run
+if (err instanceof NotFoundError) {
+  io.stderr(`Error: ${err.message}`);
+  return 1;
+}
+
+// util.parseArgs throws its own errors (e.g. "-1" looks like an unknown option);
+// they mean the command line is wrong, so they become UsageErrors (exit 2).
+function parseCommandLine(args, options) {
+  try {
+    return parseArgs({ args, options, allowPositionals: true });
+  } catch (err) {
+    throw new UsageError('INVALID_ARGUMENTS', err.message);
+  }
+}
+```
+
+```
+ℹ tests 71 · pass 71 · fail 0   (exit 0)
+```
+
+**Mutation thủ công:**
+
+| Mutation | Test đỏ |
+|---|---|
+| Regex `/^\d+$/` (cho phép `0`) | C10 |
+| Dùng `parseInt` (`12abc` → 12) | C10 |
+| Không bọc lỗi `parseArgs` (`-1` → crash) | C10 |
+| `NotFoundError` trả exit 2 | C9 |
+
+**Một lần chạy mutation sai được phát hiện và làm lại:** chuỗi thay thế `/^\d+$/` bắt đầu bằng `/` nên **Git Bash tự đổi thành đường dẫn Windows** (`C:/Program Files/Git/^/d+$/`) → file lỗi cú pháp. Bước kiểm tra `require` trong script mutation đã báo lỗi ngay, nên không có kết luận sai; chạy lại với `MSYS_NO_PATHCONV=1` → C10 đỏ đúng như mong đợi. Bài học (lần thứ hai sau Bước 32): luôn kiểm tra **chính mutation** trước khi đọc kết quả.
+
+### Kết quả / Ghi chú
+
+- ✅ C5, C9, C10 xanh.
+- Commit đề xuất: `feat(cli): add the show command with id validation`.
+- Tiếp theo: **vòng 14 – `update` và lỗi validation (C6–C8)**.

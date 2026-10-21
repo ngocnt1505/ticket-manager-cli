@@ -20,7 +20,7 @@ module.exports = {
     tags: { type: 'string' },
   },
 
-  execute(values, { store, print }) {
+  execute({ values }, { store, print }) {
     const tickets = listTickets(store.load(), values);
     if (tickets.length === 0) {
       print('No tickets found.');
