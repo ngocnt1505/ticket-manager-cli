@@ -8,6 +8,7 @@ Nguyễn Thúy Ngọc
 | [DECISIONS.md](DECISIONS.md) | Design decisions fixed before coding, with who decided each one |
 | [TEST-LIST.md](TEST-LIST.md) | Test list for the TDD cycles, every scenario checked off |
 | [TEST-RESULTS.md](TEST-RESULTS.md) | Test run, coverage, mutation testing, fresh-clone check, acceptance criteria |
+| [MENTOR-QA.md](MENTOR-QA.md) | Answers to the mentor's review questions (Vietnamese): one Red / Green / Refactor cycle replayed commit by commit, and why JSON + a temporary file |
 | [history.md](history.md) | Development log (Vietnamese): every step with What / Why / How, red/green output, mutation checks |
 
 Setup and usage of the tool are in the [project README](../README.md).

@@ -3689,3 +3689,95 @@ Thay cho file `AI-LOG.md` riêng (quyết định của Ngọc), phần này t�
 - Phần lớn code và test do AI viết; vai trò của Ngọc chủ yếu là **người quyết định, người review và người commit**. Khi bảo vệ, Ngọc cần giải thích được từng quyết định trong `DECISIONS.md` và lý do đỏ của ít nhất một vòng TDD (ví dụ vòng title, Bước 6–16).
 - Mọi khẳng định "đã xanh / đã bắt được" của AI đều đi kèm **output chạy thật** trong nhật ký – đúng nguyên tắc tuần 1 (Report §5.4): không tin câu "đã chạy", tự chạy lại.
 - Bài học lớn nhất: **mỗi lớp kiểm chứng bắt được thứ lớp khác bỏ sót** – bước Red bắt xanh giả; mutation bắt test thiếu và code thừa; coverage bắt nhánh chưa test; chạy tay và `npm link` bắt lỗi môi trường mà test tự động không đi qua.
+
+> **Cập nhật Bước 65:** Ngọc commit và push `b9dae64 chore: final checks before submission`, gửi bài cho mentor.
+
+---
+
+## Bước 66 – Nhận review của mentor; viết `docs/MENTOR-QA.md`
+
+**Thời gian:** 2026-10-27 · **Người làm:** Claude soạn tài liệu (theo yêu cầu); Ngọc review và commit · **Commit:** chưa
+
+### What
+
+Mentor review *Batch 05102026* (commit `b9dae64`): **Pass technical AC / Accept with feedback.**
+
+| Nhận xét của mentor | Loại |
+|---|---|
+| 86/86 test pass, working tree sạch; đạt các AC create / list / filter / show / update, unit / integration, lỗi JSON, README | Tốt |
+| Có cặp `a636cbd` Red → `de8f421` Green → `7843165` Refactor; mentor **tự chạy lại** snapshot Red: fail đúng assertion `undefined !== 'Fix login'` | Tốt |
+| Nhiều vòng tách test / feat / refactor rõ; Conventional Commits nhìn chung tốt | Tốt |
+| [P3 – Git] Commit khởi tạo `init project structure` chưa theo Conventional Commits → lần sau dùng `chore: initialize project` | Góp ý |
+| [P3 – reliability] README đã nêu giới hạn concurrent writes, symlink, power loss; nếu mở rộng thì thêm test cho locking / symlink – không phải blocker tuần 2 | Góp ý |
+| [Mentor Q&A] Giải thích một vòng Red / Green / Refactor và lý do chọn JSON + temporary file | Câu hỏi |
+
+Viết `docs/MENTOR-QA.md` trả lời câu hỏi và ghi nhận góp ý; thêm vào mục lục `docs/README.md`.
+
+### Why
+
+- Câu trả lời cho mentor phải **kiểm chứng được** – đúng điều mentor khen ("mình chạy lại snapshot Red"). Vì vậy tài liệu có lệnh chạy lại và bảng kết quả thật cho **từng commit** của vòng Title, không chỉ kể lại.
+- Phát huy điểm được khen: giữ cách tách commit `test` → `feat` → `refactor` và cách kiểm chứng bằng output thật trong chính câu trả lời.
+
+### How
+
+**Chạy lại cả vòng Title theo từng commit** – xuất mã nguồn của commit ra thư mục tạm bằng `git archive` (không đổi repo đang làm việc), chạy `node --test`:
+
+| Commit | Bước | pass / fail | Lý do đỏ |
+|---|---|---|---|
+| `a636cbd` | Red M1 | 0 / 1 | `actual: undefined, expected: 'Fix login'` |
+| `de8f421` | Green | 1 / 0 | |
+| `436a224` | Red M2 | 1 / 1 | `Missing expected exception (ValidationError)` |
+| `8b2baa9` | Green | 2 / 0 | |
+| `b7da95f` | Red M4 | 2 / 1 | `Missing expected exception (ValidationError)` |
+| `cd8a061` | Green | 3 / 0 | |
+| `2bfcefa` | Test canh M3, M5 | 5 / 0 | |
+| `0f3605c` | Red M6 | 5 / 1 | `name: 'TypeError'` thay vì `'ValidationError'` |
+| `92681e4` | Green | 6 / 0 | |
+| `7843165` | Refactor | 6 / 0 | (chỉ sửa `src/models/ticket.js`, không sửa test) |
+
+**Chạy thử để minh họa vì sao cần file tạm:**
+
+```
+trước: 43 byte
+ngay sau khi mở để ghi thẳng (chưa ghi gì, giả sử chương trình dừng ở đây): 0 byte
+khi file tạm mới ghi được một nửa, file thật vẫn: nguyên vẹn | load() đọc được 2 ticket
+```
+
+Nội dung `MENTOR-QA.md`:
+
+1. **Vòng Title**: test list → Red (vì sao cần stub; xanh giả do file chưa lưu) → Green tối thiểu → các vòng kéo thêm code (vì sao M4 trước M3, mutation `>=`, assertion mạnh ở M6) → Refactor (vì sao lúc này, chứng minh không đổi hành vi) → lệnh tự chạy lại.
+2. **Vì sao JSON**: bảng so sánh 4 cách lưu; tách hàm thuần parse / serialize; file hỏng không bao giờ bị ghi đè.
+3. **Vì sao file tạm + `rename`**: vấn đề ghi thẳng (minh họa 43 → 0 byte); cách làm; vì sao cùng thư mục; dọn file tạm an toàn; bảng test D10, D12, P5, D11/C18 + mutation; ba giới hạn (fsync, khóa, symlink) và hướng mở rộng theo TDD – trả lời luôn góp ý `[P3 – reliability]`.
+4. **Ghi nhận góp ý `[P3 – Git]`**: giữ nguyên lịch sử đã push; từ bài sau dùng `chore: initialize project`.
+
+### Kết quả / Ghi chú
+
+- Kiểm tra: mọi link trong `MENTOR-QA.md` trỏ đúng (link báo cáo tuần 1 HTTP 200); ngôi xưng thống nhất "em" (tài liệu gửi mentor).
+- Thư mục `docs2/` (đề bài Week 3) chưa được git theo dõi – không thuộc bước này, không đụng tới.
+- Commit đề xuất: `docs: answer mentor questions on TDD cycle and JSON storage`.
+
+---
+
+## Bước 67 – Viết lại `docs/MENTOR-QA.md` ngắn gọn, dễ hiểu hơn
+
+**Thời gian:** 2026-10-27 · **Người làm:** Claude viết lại (theo yêu cầu của Ngọc); Ngọc review và commit · **Commit:** chưa
+
+### What
+
+Rút gọn `docs/MENTOR-QA.md` từ khoảng 230 dòng xuống 102 dòng, giữ nguyên 4 phần: vòng Red/Green/Refactor, vì sao JSON, vì sao file tạm, góp ý về commit đầu tiên.
+
+### Why
+
+Ngọc yêu cầu giải thích **đơn giản, dễ hiểu, ngắn gọn** hơn. Bản trước nhiều chi tiết kỹ thuật (bảng so sánh 4 cách lưu, giải thích `EXDEV`, code `save()` đầy đủ, lệnh tái hiện), khó dùng khi trả lời trực tiếp.
+
+### How
+
+- Mỗi bước Red / Green / Refactor còn: làm gì, kết quả, một câu "vì sao".
+- Các vòng sau gộp thành một bảng 3 dòng "test mới → code thêm vào".
+- Phần JSON còn 4 lý do ngắn; phần file tạm còn: vấn đề (43 → 0 byte), cách làm 2 bước, một test chứng minh, 3 giới hạn.
+- Bỏ: bảng so sánh các cách lưu, chi tiết `EXDEV` / `rmSync`, lệnh `git archive`. Các chi tiết này vẫn có trong `history.md` (Bước 66) và `TEST-RESULTS.md`.
+- Giữ nguyên **số liệu thật**: hash commit, lý do đỏ, kết quả chạy lại từng commit, minh họa 43 → 0 byte.
+
+### Kết quả / Ghi chú
+
+- Commit đề xuất: nếu chưa commit bản cũ thì dùng chung commit `docs: answer mentor questions on TDD cycle and JSON storage`.
