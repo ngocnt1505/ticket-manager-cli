@@ -549,7 +549,7 @@ npx jest           → Tests: 12 failed, 64 passed, 76 total   (~7 s, gồm cả
 
 ## Bước 10 – Vòng 5: bước Green – lệnh `kb` chạy thật, đổi client bằng biến môi trường
 
-**Thời gian:** 2026-10-27 · **Người làm:** Claude viết code và chạy thử (theo yêu cầu); Ngọc review và commit · **Commit:** chưa
+**Thời gian:** 2026-10-27 · **Người làm:** Claude viết code và chạy thử (theo yêu cầu); Ngọc review và commit · **Commit:** `fc3ba74`
 
 ### What
 
@@ -650,3 +650,49 @@ Bốn lệnh mẫu trong `tasks.md` (`kb search "response" --top-k 3`, `kb list 
 - ✅ Vòng 5 xanh – xong toàn bộ phần code. Còn lại: README phần KB, `docs2/TEST-RESULTS.md`, đối chiếu AC.
 - Ở chế độ mock, dữ liệu nằm trong bộ nhớ → `kb add` chỉ có tác dụng trong lần chạy đó; muốn giữ dữ liệu giữa các lệnh thì dùng `KB_CLIENT=http` với server (sẽ ghi rõ trong README).
 - Commit đề xuất: `feat(kb): add the kb command with client selection by environment`.
+
+
+> **Cập nhật Bước 10:** Ngọc commit `fc3ba74 feat(kb): add the kb command with client selection by environment`.
+
+---
+
+## Bước 11 – Tài liệu: README phần `kb`, TEST-RESULTS, đối chiếu AC
+
+**Thời gian:** 2026-10-27 · **Người làm:** Claude viết tài liệu và chạy kiểm chứng (theo yêu cầu); Ngọc review và commit · **Commit:** chưa
+
+### What
+
+| File | Nội dung |
+|---|---|
+| `README.md` | Đổi tên thành *Ticket Manager & Knowledge Base CLI*; thêm mục **Knowledge Base CLI (`kb`)**: sơ đồ kiến trúc (CLI → `KBClient` → Mock / HTTP → KB server) kèm lý do của từng phần, Setup (mock cho development, HTTP cho production), biến môi trường, 4 lệnh, exit code, **API contract** (request/response, lỗi, ví dụ `curl`). Cập nhật Requirements, Installation (`npm install` + `npm link`), Running the tests, Project structure, Documentation, Known limitations |
+| `docs2/TEST-RESULTS.md` | Kết quả kiểm chứng được: output đầy đủ `jest --verbose`, coverage, 40 đột biến, lỗ hổng đã lấp, chạy thật, clone sạch, đối chiếu 4 AC và Deliverables của `tasks.md`, lịch sử commit |
+
+### Why
+
+- **Đề (Day 5):** *"Diagram: CLI → KB client interface → MockKBClient/HTTPKBClient"*, *"Document API contract"*, *"How to run with mock client (development) / HTTP client (production)"*, *"Environment variable configuration"* → mỗi yêu cầu có một mục trong README.
+- **Tips của đề:** *"Why each piece exists (not just what)"*, *"Show data flow"*, *"Include API examples"* → bảng "Why each piece exists", dòng Data flow, ví dụ `curl` và `KB_DEBUG`.
+- **Trung thực về AC 4:** ghi rõ là không được cấp URL KB thật, đã kiểm chứng với server tham chiếu, và một server thật cần gì (đúng contract) – ở README (Known limitations) và TEST-RESULTS (mục 8).
+- **Giữ cách làm tuần 2** được mentor khen: bằng chứng chạy thật, tái hiện được.
+
+### How
+
+Mọi con số và ví dụ trong tài liệu đều được **chạy lại để lấy**, không viết theo trí nhớ:
+
+| Kiểm chứng | Kết quả |
+|---|---|
+| `npx jest --coverage --verbose` | 76 pass; 99,67 % dòng, 85,15 % nhánh |
+| `npm run test:unit` / `test:integration` | 70 / 16 → tickets 86 |
+| Coverage tickets (`node --test --experimental-test-coverage`) | 100 % dòng, **100 % nhánh** |
+| Ví dụ trong README: `kb list --node /team`, `kb search --help`, `KB_CLIENT=HTTP` khi server tắt | đúng như README |
+| Clone sạch tại `fc3ba74` → `npm install` → `npm test` → `node bin/kb.js search …` | chưa có `dist/` → `npm install` tự build; 86 + 76 pass, exit 0; lệnh chạy đúng |
+
+**Phát hiện khi kiểm chứng:**
+
+1. **README cũ ghi sai số liệu tuần 2:** "84 tests (68 unit)" và "99 % of branches", thực tế là **86 tests (70 unit)** và **100 % nhánh** (README chưa được cập nhật sau các test bổ sung cuối tuần 2) → đã sửa.
+2. **Git Bash đổi đường dẫn:** `node bin/kb.js list --node /team` trong Git Bash báo `Error: node path must start with "/": C:/Program Files/Git/team` – MSYS tự đổi tham số bắt đầu bằng `/` thành đường dẫn Windows (cùng lỗi đã gặp khi chạy đột biến). Với `MSYS_NO_PATHCONV=1` thì đúng; PowerShell/cmd không bị → ghi vào README (Known limitations).
+3. **Sự cố khi ghi log:** lệnh `node -e "…"` dùng để nối đoạn log này vào `history.md` đặt văn bản có dấu backtick trong chuỗi ngoặc kép của bash → bash coi các đoạn trong backtick là lệnh và chạy chúng (các lệnh chỉ đọc hoặc lỗi ngay, không ghi/xóa gì), đồng thời ghi một đoạn log hỏng vào cuối file. Đã cắt file về đúng dòng cuối của Bước 10 (kiểm tra bằng `git diff --stat`: chỉ còn dòng mã commit của Bước 10), rồi viết lại đoạn này qua file tạm. Tương tự, heredoc để tạo `TEST-RESULTS.md` bị lỗi cú pháp → viết bằng công cụ Write, chèn output `jest --verbose` và `git log` thật bằng script (không gõ tay).
+
+### Kết quả / Ghi chú
+
+- ✅ Đủ 4 AC (AC 4 có giới hạn đã ghi rõ) và đủ Deliverables của `tasks.md` – bảng đối chiếu ở `TEST-RESULTS.md` mục 8.
+- Commit đề xuất: `docs(kb): document the kb CLI, API contract and test results`.
