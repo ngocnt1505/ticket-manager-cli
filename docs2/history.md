@@ -395,7 +395,7 @@ Ghi chú Windows: dừng `npm run kb-server` từ công cụ chạy nền chỉ 
 
 ## Bước 7 – Vòng 4 (`HTTPKBClient`): bước Red
 
-**Thời gian:** 2026-10-27 · **Người làm:** Claude viết test + stub (theo yêu cầu); Ngọc review và commit · **Commit:** chưa
+**Thời gian:** 2026-10-27 · **Người làm:** Claude viết test + stub (theo yêu cầu); Ngọc review và commit · **Commit:** `27aa633`
 
 ### What
 
@@ -438,3 +438,57 @@ npx jest           → Tests: 22 failed, 42 passed, 64 total
 
 - ✅ Đỏ đúng lý do.
 - Commit đề xuất: `test(kb): add failing tests for the HTTP KB client`.
+
+> **Cập nhật Bước 7:** Ngọc commit `27aa633 test(kb): add failing tests for the HTTP KB client`.
+
+---
+
+## Bước 8 – Vòng 4: bước Green – `HTTPKBClient` bằng `fetch`
+
+**Thời gian:** 2026-10-27 · **Người làm:** Claude viết code (theo yêu cầu); Ngọc review và commit · **Commit:** chưa
+
+### What
+
+| File | Nội dung |
+|---|---|
+| `src/kb/errors.ts` | Thêm `KBConnectionError` (`CONNECTION_FAILED`) và `KBApiError` (code của server hoặc `BAD_RESPONSE`, kèm `status`) |
+| `src/kb/httpClient.ts` | `HTTPKBClient`: 4 hàm gọi chung một hàm `post(path, body)`; `fetch` có sẵn trong Node 24, không cần thư viện |
+
+**Không sửa test.**
+
+### Why
+
+- **Mọi kết quả HTTP được xử lý ở một chỗ** (`post`), theo bảng ở `DECISIONS.md` §4: không kết nối được → `KBConnectionError`; 400 → `KBValidationError`; 404 → `KBNotFoundError`; 5xx / status lạ → `KBApiError`; JSON hỏng → `KBApiError BAD_RESPONSE`. Nhờ vậy CLI (vòng 2) **không cần sửa gì**: lỗi mới đều là `KBError` → exit 1, còn 400 là `KBValidationError` → exit 2.
+- **Không tin dữ liệu từ mạng:** kiểm tra cấu trúc response (`isSummary`, `documentFrom`) và chỉ giữ đúng các trường cần thiết → server khác có gửi thêm trường lạ cũng không lọt vào kết quả.
+- **Thông báo lỗi kết nối có lý do thật:** `fetch` chỉ báo `fetch failed`; lý do hữu ích (`ECONNREFUSED`, `ENOTFOUND`) nằm trong `err.cause` → đưa vào message và dòng debug.
+- **`debug` là một hàm truyền vào** (mặc định không làm gì) thay vì đọc thẳng `KB_DEBUG` → test kiểm tra được từng dòng log; việc đọc biến môi trường để ở vòng 5.
+
+### How
+
+```
+npx tsc --noEmit   → OK
+npx jest           → Tests: 64 passed, 64 total   (chạy 3 lần: đều 64/64, ~3,3 s)
+```
+
+**Kiểm tra đột biến** (`test/kb/httpClient.test.ts`, trả code cũ sau mỗi lần):
+
+| # | Làm hỏng | Test đỏ |
+|---|---|---|
+| M1 | Không bỏ `/` cuối của `baseUrl` | H4 |
+| M2 | Không đổi 400 thành `KBValidationError` | K8, K12, K16 |
+| M3 | Không đổi 404 thành `KBNotFoundError` | K14 |
+| M4 | Không gửi `filters` | K5 |
+| M5 | Không kiểm tra response là JSON | H3 |
+| M6 | Không kiểm tra cấu trúc `/list` | H3 |
+| M7 | Bỏ dòng debug của request | H5, H6 |
+| M8 | Bỏ dòng debug khi mất kết nối | H6 |
+| M9 | Không bọc lỗi kết nối | H1 |
+| M10 | Để lọt trường `matchType` vào `document` | K1 |
+| M11 | Message 5xx thiếu status | H2 |
+
+11/11 đột biến bị bắt. Riêng M2–M4, M10 là các test **chung** (K…) bắt được – đúng mục đích của bộ test chung: HTTP client cư xử khác mock là đỏ.
+
+### Kết quả / Ghi chú
+
+- ✅ Vòng 4 xanh: `HTTPKBClient` qua cùng 16 luật với mock + 6 test riêng cho HTTP.
+- Commit đề xuất: `feat(kb): add an HTTP KB client using fetch`.

@@ -23,3 +23,21 @@ export class KBNotFoundError extends KBError {
     super(message, 'NOT_FOUND');
   }
 }
+
+/** The KB server could not be reached (not running, wrong KB_API_URL, network down). */
+export class KBConnectionError extends KBError {
+  constructor(message: string) {
+    super(message, 'CONNECTION_FAILED');
+  }
+}
+
+/** The KB server answered, but with a server error or a response we cannot use. */
+export class KBApiError extends KBError {
+  constructor(
+    message: string,
+    code: string,
+    readonly status: number,
+  ) {
+    super(message, code);
+  }
+}
