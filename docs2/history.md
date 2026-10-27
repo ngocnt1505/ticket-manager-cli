@@ -214,7 +214,7 @@ Lúc đầu C11 đỏ vì `KBNotFoundError` (đọc `doc-004` khi chưa được
 
 ## Bước 4 – Vòng 2: bước Green – 4 lệnh `kb` bằng Commander
 
-**Thời gian:** 2026-10-27 · **Người làm:** Claude viết code (theo yêu cầu); Ngọc review và commit · **Commit:** chưa
+**Thời gian:** 2026-10-27 · **Người làm:** Claude viết code (theo yêu cầu); Ngọc review và commit · **Commit:** `05fd81f`
 
 ### What
 
@@ -264,3 +264,51 @@ npx jest           → Tests: 32 passed, 32 total
 - ✅ Vòng 2 xanh. Chưa cần Refactor: mỗi lệnh 5–10 dòng, phần định dạng output đã tách thành hàm nhỏ (`summaryLine`, `detailLines`).
 - Lệnh `kb` chưa chạy được từ terminal (chưa có file bin) – làm ở vòng 5.
 - Commit đề xuất: `feat(kb): add the kb search, list, retrieve and add commands`.
+
+> **Cập nhật Bước 4:** Ngọc commit `05fd81f feat(kb): add the kb search, list, retrieve and add commands`.
+
+---
+
+## Bước 5 – Vòng 3 (KB server tham chiếu): bước Red
+
+**Thời gian:** 2026-10-27 · **Người làm:** Claude viết test + stub (theo yêu cầu); Ngọc review và commit · **Commit:** chưa
+
+### What
+
+| File | Nội dung |
+|---|---|
+| `src/kb/server.ts` | Stub `createKBServer(client = new MockKBClient())` – trả về `http.Server` luôn trả 501 |
+| `test/kb/server.test.ts` | 10 test S1–S10 cho API contract (`DECISIONS.md` §4), gọi bằng **HTTP thật** (`fetch`) |
+
+### Why
+
+- **Không có URL KB server thật** (`DECISIONS.md` §5) → tự viết server tham chiếu theo đúng contract. Vòng 4 sẽ chạy `HTTPKBClient` với server này.
+- **Server không tự có luật nghiệp vụ:** nó nhận một `KBClient` (mặc định `MockKBClient`) và chỉ làm phần HTTP – đọc JSON, gọi client, trả status + JSON. Luật search/list/add chỉ nằm ở một chỗ (mock), nên mock và "server thật" không thể lệch nhau.
+- **Test bằng HTTP thật trên cổng ngẫu nhiên** (`listen(0)`): kiểm tra đúng những gì client sẽ thấy (status, `Content-Type`, JSON), không phụ thuộc cổng 3000 có đang bị dùng hay không. Mỗi test một server mới → dữ liệu không lẫn giữa các test; `afterEach` đóng server để Jest thoát gọn.
+- Mỗi dòng của contract có test:
+
+| Contract | Test |
+|---|---|
+| `/search` 200 `{ results: [{ id, title, nodePath, tags, matchType }] }` | S1, S2 (có `filters`) |
+| `/list` 200 `{ documents }` | S3 |
+| `/retrieve` 200 `{ document }` | S4 |
+| `/add` 201 `{ document }` | S5 |
+| 400 `INVALID_INPUT` | S6 (luật của client), S7 (JSON hỏng, không phải object, sai kiểu trường) |
+| 404 `NOT_FOUND` | S8 (id không có), S9 (endpoint lạ, method khác POST) |
+| 500 `INTERNAL` | S10 – thông báo chung, **không lộ** chi tiết lỗi bên trong |
+
+- S7 cần thiết vì server nhận dữ liệu từ bên ngoài: `{ "query": 5 }` không được làm server sập (500) mà phải là 400.
+
+### How
+
+```
+npx tsc --noEmit   → OK
+npx jest           → Tests: 10 failed, 32 passed, 42 total   (3,6 s, không treo)
+```
+
+10 test server đỏ, tất cả vì **assertion** (`toBe` / `toEqual` trên status – stub trả 501). 32 test cũ vẫn xanh.
+
+### Kết quả / Ghi chú
+
+- ✅ Đỏ đúng lý do.
+- Commit đề xuất: `test(kb): add failing tests for the reference KB server`.
