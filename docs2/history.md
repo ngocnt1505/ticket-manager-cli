@@ -499,7 +499,7 @@ npx jest           → Tests: 64 passed, 64 total   (chạy 3 lần: đều 64/6
 
 ## Bước 9 – Vòng 5 (chọn client qua biến môi trường + lệnh `kb` thật): bước Red
 
-**Thời gian:** 2026-10-27 · **Người làm:** Claude viết test + stub (theo yêu cầu); Ngọc review và commit · **Commit:** chưa
+**Thời gian:** 2026-10-27 · **Người làm:** Claude viết test + stub (theo yêu cầu); Ngọc review và commit · **Commit:** `6a2e22c`
 
 ### What
 
@@ -542,3 +542,111 @@ npx jest           → Tests: 12 failed, 64 passed, 76 total   (~7 s, gồm cả
 
 - ✅ Đỏ đúng lý do.
 - Commit đề xuất: `test(kb): add failing tests for client selection and the kb command`.
+
+> **Cập nhật Bước 9:** Ngọc commit `6a2e22c test(kb): add failing tests for client selection and the kb command`.
+
+---
+
+## Bước 10 – Vòng 5: bước Green – lệnh `kb` chạy thật, đổi client bằng biến môi trường
+
+**Thời gian:** 2026-10-27 · **Người làm:** Claude viết code và chạy thử (theo yêu cầu); Ngọc review và commit · **Commit:** chưa
+
+### What
+
+| File | Nội dung |
+|---|---|
+| `src/kb/environment.ts` | `clientFromEnv`: `KB_CLIENT` (mặc định `mock`) → `MockKBClient` / `HTTPKBClient(KB_API_URL ?? http://localhost:3000)`; `KB_DEBUG=1` → bật log; giá trị lạ → `KBValidationError` |
+| `src/kb/main.ts` | Nối CLI với thế giới thật: `process.argv`, `process.env`, stdout/stderr, `fs.readFile(…, 'utf8')`; đặt `process.exitCode` |
+| `package.json` | `bin.kb = ./bin/kb.js`; `"prepare": "npm run build"` (npm tự build khi `npm install` / `npm link`) |
+| `test/kb/e2e.test.ts` | X2 dùng tiêu đề tiếng Việt `Nhắc lịch hẹn` (xem kiểm tra đột biến) |
+
+### Why
+
+- **`main.ts` mỏng, giống `bin/tickets.js` tuần 2:** mọi logic nằm ở `run` và `clientFromEnv` (đã có unit test); `main` chỉ nối dây.
+- **`KB_CLIENT` sai → exit 2** (lỗi cách dùng), in một dòng `Error: …`, giống các lỗi dùng sai khác.
+- **`process.exitCode` thay vì `process.exit()`:** để Node tự thoát sau khi in xong hết stdout/stderr (không bị cắt output khi chuyển qua pipe).
+- **`prepare`:** người khác clone repo chỉ cần `npm install` là có `dist/` – không phải nhớ chạy `npm run build`.
+
+### How
+
+```
+npx tsc --noEmit   → OK
+npx jest           → Tests: 76 passed, 76 total
+npm test           → tickets: tests 86, pass 86, fail 0 · kb: Tests 76 passed (exit 0)
+```
+
+**Kiểm tra đột biến** (`environment.test.ts` + `e2e.test.ts`; e2e tự build lại nên chạy đúng code bị sửa):
+
+| # | Làm hỏng | Test đỏ |
+|---|---|---|
+| M1 | Mặc định `http` thay vì `mock` | E1, X1 |
+| M2 | Không bỏ khoảng trắng / không chuyển chữ thường | E2 |
+| M3 | Bỏ qua `KB_API_URL` | E3, E5, X2, X3, X4 |
+| M4 | Luôn bật debug | E5, X2, X3 |
+| M5 | Sai URL mặc định (3001) | E4 |
+| M6 | `KB_CLIENT` sai → exit 1 | X5 |
+| M7 | Không đặt `process.exitCode` | X3, X5, X6 |
+| M8 | Đọc file bằng `latin1` thay vì `utf8` | **Lần đầu: không đỏ** → sau khi đổi X2 sang tiêu đề tiếng Việt: X2 |
+
+- **M8:** file trong X2 chỉ có chữ ASCII → đọc bằng `latin1` hay `utf8` ra giống nhau → test không phát hiện. Với người dùng Việt Nam đây là lỗi thật (`Nhắc` sẽ thành `NhÄ\u0083c`). Đổi tiêu đề file trong X2 thành `# Nhắc lịch hẹn` → M8 đỏ. Đây là **bổ sung dữ liệu test**, không đổi hành vi được kiểm tra.
+- Lần thay chuỗi đầu tiên cho X2 escape sai (`\n`) nên **không thay gì** – đã phát hiện vì script báo `no match` và M8 vẫn xanh; làm lại bằng công cụ Edit.
+
+**Chạy thật** (`npm link`, PowerShell):
+
+Mock (mặc định):
+
+```
+PS> kb search "response" --top-k 3
+doc-001  Customer Response Template  /templates/email  [template, email]  (match: title)
+exit 0
+PS> kb list --node /templates/email --limit 10
+doc-001  Customer Response Template  /templates/email  [template, email]
+exit 0
+PS> kb retrieve doc-001
+ID:    doc-001
+Title: Customer Response Template
+Path:  /templates/email
+Tags:  template, email
+
+# Customer Response Template
+…
+exit 0
+PS> kb retrieve doc-999
+Error: document doc-999 not found
+exit 1
+PS> kb search team --top-k 0
+Error: option '--top-k <n>' argument '0' is invalid. It must be a positive whole number.
+exit 2
+```
+
+HTTP (server tham chiếu ở cổng 3457):
+
+```
+PS> $env:KB_CLIENT="http"; $env:KB_API_URL="http://localhost:3457"
+PS> kb add --file new-template.md --path /templates/sms --tags sms
+Added doc-004: SMS Appointment Reminder (/templates/sms)
+exit 0
+PS> kb list --node /templates
+doc-001  Customer Response Template  /templates/email  [template, email]
+doc-004  SMS Appointment Reminder  /templates/sms  [sms]
+exit 0
+PS> kb search appointment
+doc-004  SMS Appointment Reminder  /templates/sms  [sms]  (match: title)
+exit 0
+PS> $env:KB_DEBUG="1"; kb retrieve doc-999
+[kb] → POST http://localhost:3457/retrieve {"docId":"doc-999"}
+[kb] ← 404 {"error":{"code":"NOT_FOUND","message":"document doc-999 not found"}}
+Error: document doc-999 not found
+exit 1
+PS> $env:KB_API_URL="http://localhost:3999"; kb list
+Error: cannot connect to KB server at http://localhost:3999 (ECONNREFUSED)
+exit 1
+```
+
+Bốn lệnh mẫu trong `tasks.md` (`kb search "response" --top-k 3`, `kb list --node /templates/email --limit 10`, `kb retrieve doc-001`, `kb add --file new-template.md --path /templates/sms --tags sms`) đều chạy đúng.
+
+### Kết quả / Ghi chú
+
+- ✅ Vòng 5 xanh – xong toàn bộ phần code. Còn lại: README phần KB, `docs2/TEST-RESULTS.md`, đối chiếu AC.
+- Ở chế độ mock, dữ liệu nằm trong bộ nhớ → `kb add` chỉ có tác dụng trong lần chạy đó; muốn giữ dữ liệu giữa các lệnh thì dùng `KB_CLIENT=http` với server (sẽ ghi rõ trong README).
+- Commit đề xuất: `feat(kb): add the kb command with client selection by environment`.

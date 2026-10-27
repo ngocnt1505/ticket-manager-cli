@@ -4,7 +4,8 @@
   "description": "Ticket Manager CLI: create, list, show and update tickets stored in a local JSON file (built with TDD)",
   "main": "src/cli.js",
   "bin": {
-    "tickets": "./bin/tickets.js"
+    "tickets": "./bin/tickets.js",
+    "kb": "./bin/kb.js"
   },
   "scripts": {
     "test": "npm run test:tickets && npm run test:kb",
@@ -13,6 +14,7 @@
     "test:integration": "node --test \"test/integration/**/*.test.js\"",
     "test:kb": "jest",
     "build": "tsc -p tsconfig.build.json",
+    "prepare": "npm run build",
     "typecheck": "tsc --noEmit",
     "kb-server": "npm run build && node dist/kb/startServer.js",
     "coverage": "node --test --experimental-test-coverage \"test/unit/**/*.test.js\" \"test/integration/**/*.test.js\" && jest --coverage"

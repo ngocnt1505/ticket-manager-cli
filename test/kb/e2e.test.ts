@@ -52,16 +52,16 @@ describe('kb command (end-to-end)', () => {
   test('X2: KB_CLIENT=http talks to the KB server at KB_API_URL – add a real file, then find it', async () => {
     const env = { KB_CLIENT: 'http', KB_API_URL: await startKBServer() };
     const file = join(tempDir, 'sms.md');
-    await writeFile(file, '# SMS Reminder\n\nYour appointment is tomorrow.\n');
+    await writeFile(file, '# Nhắc lịch hẹn\n\nYour appointment is tomorrow.\n'); // UTF-8: Vietnamese must survive
 
     expect(await kb(['add', '--file', file, '--path', '/templates/sms', '--tags', 'sms'], env)).toEqual({
       code: 0,
-      stdout: 'Added doc-004: SMS Reminder (/templates/sms)\n',
+      stdout: 'Added doc-004: Nhắc lịch hẹn (/templates/sms)\n',
       stderr: '',
     });
     expect(await kb(['search', 'appointment'], env)).toEqual({
       code: 0,
-      stdout: 'doc-004  SMS Reminder  /templates/sms  [sms]  (match: content)\n',
+      stdout: 'doc-004  Nhắc lịch hẹn  /templates/sms  [sms]  (match: content)\n',
       stderr: '',
     });
   });
