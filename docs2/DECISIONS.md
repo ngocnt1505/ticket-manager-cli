@@ -76,6 +76,16 @@ Mọi endpoint: `POST`, body và response là JSON (`Content-Type: application/j
 | 404 | `NOT_FOUND` | `retrieve` id không tồn tại; endpoint lạ |
 | 500 | `INTERNAL` | Lỗi phía server |
 
+**`HTTPKBClient` đổi kết quả HTTP thành lỗi** (Thiết kế) – CLI chọn exit code theo lỗi (mục 7):
+
+| Tình huống | Lỗi | Exit |
+|---|---|---|
+| 400 | `KBValidationError` (`INVALID_INPUT`, giữ message của server) | 2 |
+| 404 | `KBNotFoundError` (`NOT_FOUND`) | 1 |
+| 5xx / status lạ | `KBApiError` (code của server, có `status`) | 1 |
+| Không kết nối được | `KBConnectionError` (`CONNECTION_FAILED`, có URL) | 1 |
+| Response không phải JSON / sai cấu trúc | `KBApiError` (`BAD_RESPONSE`) | 1 |
+
 ## 5. KB server – (không có URL server thật)
 
 | Quyết định | Nguồn |

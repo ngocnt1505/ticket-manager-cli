@@ -319,7 +319,7 @@ npx jest           → Tests: 10 failed, 32 passed, 42 total   (3,6 s, không tr
 
 ## Bước 6 – Vòng 3: bước Green – KB server tham chiếu chạy thật
 
-**Thời gian:** 2026-10-27 · **Người làm:** Claude viết code (theo yêu cầu); Ngọc review và commit · **Commit:** chưa
+**Thời gian:** 2026-10-27 · **Người làm:** Claude viết code (theo yêu cầu); Ngọc review và commit · **Commit:** `fad805c`
 
 ### What
 
@@ -388,3 +388,53 @@ Ghi chú Windows: dừng `npm run kb-server` từ công cụ chạy nền chỉ 
 
 - ✅ Vòng 3 xanh; server chạy thật đúng contract.
 - Commit đề xuất: `feat(kb): add a reference KB server for the API contract`.
+
+> **Cập nhật Bước 6:** Ngọc commit `fad805c feat(kb): add a reference KB server for the API contract`.
+
+---
+
+## Bước 7 – Vòng 4 (`HTTPKBClient`): bước Red
+
+**Thời gian:** 2026-10-27 · **Người làm:** Claude viết test + stub (theo yêu cầu); Ngọc review và commit · **Commit:** chưa
+
+### What
+
+| File | Nội dung |
+|---|---|
+| `src/kb/httpClient.ts` | `HTTPKBClientOptions { baseUrl, debug? }` + stub `HTTPKBClient` (4 hàm chưa làm gì) |
+| `test/kb/httpServers.ts` | Helper cho test: `startKBServer` (server tham chiếu, cổng ngẫu nhiên), `startFakeServer` (server trả response tùy ý), `unusedUrl` (URL không có ai nghe), `stopServers` |
+| `test/kb/httpClient.test.ts` | Bộ test chung K1–K16 chạy với `HTTPKBClient` + 6 test H1–H6 riêng cho HTTP |
+| `docs2/DECISIONS.md` | §4: bảng "HTTP → lỗi nào → exit code nào" của `HTTPKBClient` |
+
+### Why
+
+- **Một dòng là có 16 test:** `describeKBClient('HTTPKBClient', …)` – đúng như kế hoạch ở vòng 1. Nếu HTTP client cư xử khác mock ở bất kỳ luật nào, test đó đỏ (đề: *"Mock vs real API behavior differs? → Add a failing test that shows the difference"*).
+- **HTTP thật, không mock `fetch`:** client gửi request thật tới server tham chiếu → kiểm tra cả cách gửi (method, đường dẫn, JSON) lẫn cách đọc response.
+- **Những gì server tham chiếu không bao giờ làm thì dùng server giả** (`startFakeServer`): trả HTML thay vì JSON, trả JSON sai cấu trúc – đúng những lỗi có thể gặp với một server thật khác.
+- **Test riêng cho HTTP** – những thứ mock không có:
+
+| Test | Tình huống | Kỳ vọng |
+|---|---|---|
+| H1 | Server không chạy | `KBConnectionError` `CONNECTION_FAILED`, message có URL |
+| H2 | Server lỗi 500 | `KBApiError` `INTERNAL`, `status: 500` |
+| H3 | Response không phải JSON / sai cấu trúc | `KBApiError` `BAD_RESPONSE` |
+| H4 | `KB_API_URL` có `/` ở cuối | vẫn chạy (không thành `//list`) |
+| H5 | `debug` | mỗi request/response một dòng `[kb] → …` / `[kb] ← …` (đề: *"logging to debug integration issues"*) |
+| H6 | `debug` khi mất kết nối | có dòng `[kb] ✗ …` |
+
+- `unusedUrl()`: mở server ở cổng ngẫu nhiên rồi đóng ngay → có một cổng chắc chắn không ai nghe, không đoán bừa cổng.
+- Helper để ở file riêng; `server.test.ts` (vòng 3) vẫn dùng helper cũ của nó – có thể gộp ở bước Refactor sau, không làm trong bước Red.
+
+### How
+
+```
+npx tsc --noEmit   → OK
+npx jest           → Tests: 22 failed, 42 passed, 64 total
+```
+
+22 test mới đều đỏ vì **assertion** (`toEqual`, `rejects.toMatchObject`, `rejects.toThrow`…). Lúc đầu H4 đỏ vì `TypeError` (gọi `.map` trên `undefined`) → đổi thành `?.map` để đỏ ở `toEqual`.
+
+### Kết quả / Ghi chú
+
+- ✅ Đỏ đúng lý do.
+- Commit đề xuất: `test(kb): add failing tests for the HTTP KB client`.
