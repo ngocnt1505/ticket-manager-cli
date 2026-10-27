@@ -13,7 +13,7 @@ File này ghi lại **từng bước** của bài tuần 3 theo thứ tự thờ
 
 ## Bước 0 – Khởi động tuần 3: tag bản tuần 2, cài TypeScript + Jest + Commander
 
-**Thời gian:** 2026-10-27 · **Người làm:** Ngọc gắn tag và commit tài liệu; Claude cài đặt và cấu hình (theo yêu cầu) · **Commit:** chưa
+**Thời gian:** 2026-10-27 · **Người làm:** Ngọc gắn tag và commit tài liệu; Claude cài đặt và cấu hình (theo yêu cầu) · **Commit:** `56ca9fc`
 
 ### What
 
@@ -117,7 +117,7 @@ Lý do đỏ của từng test đều là **assertion**, không có `TypeError`:
 
 ## Bước 2 – Vòng 1: bước Green – `MockKBClient` chạy thật
 
-**Thời gian:** 2026-10-27 · **Người làm:** Claude viết code (theo yêu cầu); Ngọc review và commit · **Commit:** chưa
+**Thời gian:** 2026-10-27 · **Người làm:** Claude viết code (theo yêu cầu); Ngọc review và commit · **Commit:** `39adc9a`
 
 ### What
 
@@ -160,3 +160,50 @@ npx jest           → Tests: 16 passed, 16 total
 
 - ✅ Vòng 1 xanh. Chưa cần Refactor: code ngắn, mỗi luật là một hàm nhỏ.
 - Commit đề xuất: `feat(kb): add an in-memory mock KB client`.
+
+> **Cập nhật Bước 2:** Ngọc commit `39adc9a feat(kb): add an in-memory mock KB client`.
+
+---
+
+## Bước 3 – Vòng 2 (4 lệnh `kb`): bước Red
+
+**Thời gian:** 2026-10-27 · **Người làm:** Claude viết test + stub (theo yêu cầu); Ngọc review và commit · **Commit:** chưa
+
+### What
+
+| File | Nội dung |
+|---|---|
+| `src/kb/cli.ts` | Interface `KBCliIO { client, stdout, stderr, readFile }` + stub `run(argv, io)` (luôn trả 0, không in gì) |
+| `test/kb/cli.test.ts` | 16 test C1–C16 cho `kb search / list / retrieve / add`, lỗi và `--help` |
+| `docs2/DECISIONS.md` | §7: thêm mẫu output của từng lệnh; bỏ `--tags` khỏi `kb search` (đề không yêu cầu lọc theo tag) |
+
+### Why
+
+- **Giống tuần 2:** `run(argv, io)` trả về exit code; mọi thứ bên ngoài (client, màn hình, đọc file) đi qua `io` → test chạy trong bộ nhớ, nhanh, không cần file thật hay server.
+- Test dùng **`MockKBClient` thật** (đã xanh ở vòng 1) chứ không dùng client giả riêng → test CLI kiểm tra đúng cách lệnh nối với client.
+- Mỗi luật exit code trong `DECISIONS.md` §7 có ít nhất một test:
+
+| Exit | Test |
+|---|---|
+| 0 | C1–C3, C6, C8, C10, C11, C15 (`--help`) |
+| 1 | C9 (id không có), C12 (file không đọc được), C16 (lỗi bất ngờ, một dòng, không stack trace) |
+| 2 | C4 (`--top-k` 0 / -1 / 1.5 / abc), C5 (thiếu query), C7 (node sai, limit 0), C13 (thiếu `--path`, path sai), C14 (lệnh lạ, không có lệnh) |
+
+- Các test lỗi kiểm tra cả **"không có gì thay đổi"** (C12, C13: vẫn chỉ có 3 tài liệu) và **stdout rỗng** (C4, C9).
+- Trước khi viết test, đã thử nhanh Commander 14: `--top-k -1` được nhận là giá trị (không bị coi là option lạ); thiếu tham số, option bắt buộc, lệnh lạ đều ném `CommanderError` → bắt được để trả exit 2.
+
+### How
+
+```
+npx tsc --noEmit   → OK
+npx jest           → Tests: 16 failed, 16 passed, 32 total
+```
+
+16 test contract vẫn xanh; 16 test CLI đỏ, tất cả vì **assertion** (`toEqual`, `toBe`, `toMatch`) – stub trả 0 và không in gì.
+
+Lúc đầu C11 đỏ vì `KBNotFoundError` (đọc `doc-004` khi chưa được thêm) – đúng hành vi còn thiếu nhưng thông báo khó hiểu. Đã thêm kiểm tra exit code và dòng `Added doc-004: …` trước → giờ C11 đỏ ở `toEqual`.
+
+### Kết quả / Ghi chú
+
+- ✅ Đỏ đúng lý do.
+- Commit đề xuất: `test(kb): add failing tests for the kb commands`.

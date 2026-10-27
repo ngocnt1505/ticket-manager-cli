@@ -34,7 +34,7 @@ interface SearchResult {        // Đề – tasks.md: (document, matchType)
 
 interface KBQuery {             // Đề – tasks.md: (query, filters, topK)
   query: string;
-  filters?: { nodePath?: string; tags?: string[] };
+  filters?: { nodePath?: string };
   topK?: number;
 }
 ```
@@ -96,7 +96,7 @@ Mọi endpoint: `POST`, body và response là JSON (`Content-Type: application/j
 ## 7. Lệnh và exit code (giữ quy ước tuần 2)
 
 ```
-kb search <query> [--top-k <n>] [--node <path>] [--tags <a,b>]
+kb search <query> [--top-k <n>] [--node <path>]
 kb list [--node <path>] [--limit <n>]
 kb retrieve <docId>
 kb add --file <file.md> --path <nodePath> [--tags <a,b>] [--title <text>]
@@ -104,6 +104,29 @@ kb add --file <file.md> --path <nodePath> [--tags <a,b>] [--title <text>]
 
 - `kb add` đọc nội dung từ file; tiêu đề lấy từ `--title`, nếu không có thì lấy dòng `# Tiêu đề` đầu tiên trong file, nếu không có nữa thì lấy tên file.
 - Mỗi lệnh có `--help` (Commander tạo sẵn).
+- Output (Thiết kế):
+
+```
+$ kb search team --top-k 2
+doc-002  DevOps Team Members  /team/devops  [team, devops]  (match: title)
+doc-001  Customer Response Template  /templates/email  [template, email]  (match: content)
+
+$ kb list --node /team
+doc-002  DevOps Team Members  /team/devops  [team, devops]
+
+$ kb retrieve doc-002
+ID:    doc-002
+Title: DevOps Team Members
+Path:  /team/devops
+Tags:  team, devops
+
+<nội dung markdown>
+
+$ kb add --file sms.md --path /templates/sms --tags sms
+Added doc-004: SMS Reminder (/templates/sms)
+```
+
+  Không có kết quả → `No documents found.` (exit 0).
 
 | Exit | Khi nào |
 |---|---|
