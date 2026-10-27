@@ -445,7 +445,7 @@ npx jest           → Tests: 22 failed, 42 passed, 64 total
 
 ## Bước 8 – Vòng 4: bước Green – `HTTPKBClient` bằng `fetch`
 
-**Thời gian:** 2026-10-27 · **Người làm:** Claude viết code (theo yêu cầu); Ngọc review và commit · **Commit:** chưa
+**Thời gian:** 2026-10-27 · **Người làm:** Claude viết code (theo yêu cầu); Ngọc review và commit · **Commit:** `7f58a8d`
 
 ### What
 
@@ -492,3 +492,53 @@ npx jest           → Tests: 64 passed, 64 total   (chạy 3 lần: đều 64/6
 
 - ✅ Vòng 4 xanh: `HTTPKBClient` qua cùng 16 luật với mock + 6 test riêng cho HTTP.
 - Commit đề xuất: `feat(kb): add an HTTP KB client using fetch`.
+
+> **Cập nhật Bước 8:** Ngọc commit `7f58a8d feat(kb): add an HTTP KB client using fetch`.
+
+---
+
+## Bước 9 – Vòng 5 (chọn client qua biến môi trường + lệnh `kb` thật): bước Red
+
+**Thời gian:** 2026-10-27 · **Người làm:** Claude viết test + stub (theo yêu cầu); Ngọc review và commit · **Commit:** chưa
+
+### What
+
+| File | Nội dung |
+|---|---|
+| `src/kb/environment.ts` | Stub `clientFromEnv(env, debugOut)` – sẽ chọn `MockKBClient` / `HTTPKBClient` theo `KB_CLIENT`, `KB_API_URL`, `KB_DEBUG` |
+| `src/kb/main.ts` | Stub điểm chạy (chưa làm gì) |
+| `bin/kb.js` | File lệnh `kb` (giống `bin/tickets.js` tuần 2): chỉ gọi `../dist/kb/main` đã build |
+| `test/kb/environment.test.ts` | 6 test E1–E6 cho `clientFromEnv` |
+| `test/kb/e2e.test.ts` | 6 test X1–X6 chạy **lệnh `kb` thật** trong process riêng (như người dùng gõ) |
+
+### Why
+
+- **Đề:** *"KBClient interface with Mock and HTTP implementations, swappable via environment variable"* → E1–E6 kiểm tra từng biến:
+
+| Test | Biến | Kỳ vọng |
+|---|---|---|
+| E1, E2 | không có / `KB_CLIENT=" Mock "` | `MockKBClient` (đọc không phân biệt hoa thường, bỏ khoảng trắng) |
+| E3 | `KB_CLIENT=http` + `KB_API_URL` | `HTTPKBClient` gọi đúng server đó |
+| E4 | `KB_CLIENT=http`, không có `KB_API_URL` | gọi `http://localhost:3000` (mặc định ở `DECISIONS.md` §6) |
+| E5 | `KB_DEBUG=1` / không có | có / không có dòng debug |
+| E6 | `KB_CLIENT=sql` | `KBValidationError` → lỗi cách dùng |
+
+- **`clientFromEnv` nhận `env` làm tham số** (không đọc thẳng `process.env`) → test truyền object nhỏ, không phải sửa biến môi trường thật của Jest.
+- **E2E (X1–X6)** kiểm tra phần unit test không thấy được: `bin/kb.js` chạy được, đọc **file thật**, biến môi trường thật, exit code thật tới shell, stdout/stderr thật. X2 thêm tài liệu qua lệnh này rồi tìm lại bằng lệnh khác → chứng minh hai lần gọi dùng **cùng một server**.
+- **`execFile` (bất đồng bộ), không dùng `spawnSync`:** server tham chiếu chạy ngay trong process của Jest; `spawnSync` chặn process → server không trả lời được → lệnh `kb` treo.
+- **E2E tự build trước (`beforeAll`)** → không bao giờ chạy nhầm bản `dist/` cũ. Process con chỉ nhận đúng biến `KB_*` mà test đưa (lọc hết `KB_*` của máy).
+- **Lệnh `kb` là `bin/kb.js` gọi `dist/`:** Node không chạy trực tiếp TypeScript → code TS được build ra `dist/` (đã có trong `.gitignore`).
+
+### How
+
+```
+npx tsc --noEmit   → OK
+npx jest           → Tests: 12 failed, 64 passed, 76 total   (~7 s, gồm cả lần build trong e2e)
+```
+
+12 test mới đều đỏ vì **assertion**: E1–E4 `toBeInstanceOf` (stub trả `undefined`), E6 `toThrow`; X1–X6 `toEqual`/`toMatch` (stub `main.ts` không in gì, exit 0). Lúc đầu E5 đỏ vì `TypeError` (gọi `.list` trên `undefined`) → thêm `toBeInstanceOf` trước để đỏ ở assertion.
+
+### Kết quả / Ghi chú
+
+- ✅ Đỏ đúng lý do.
+- Commit đề xuất: `test(kb): add failing tests for client selection and the kb command`.
