@@ -271,7 +271,7 @@ npx jest           → Tests: 32 passed, 32 total
 
 ## Bước 5 – Vòng 3 (KB server tham chiếu): bước Red
 
-**Thời gian:** 2026-10-27 · **Người làm:** Claude viết test + stub (theo yêu cầu); Ngọc review và commit · **Commit:** chưa
+**Thời gian:** 2026-10-27 · **Người làm:** Claude viết test + stub (theo yêu cầu); Ngọc review và commit · **Commit:** `c679a74`
 
 ### What
 
@@ -312,3 +312,79 @@ npx jest           → Tests: 10 failed, 32 passed, 42 total   (3,6 s, không tr
 
 - ✅ Đỏ đúng lý do.
 - Commit đề xuất: `test(kb): add failing tests for the reference KB server`.
+
+> **Cập nhật Bước 5:** Ngọc commit `c679a74 test(kb): add failing tests for the reference KB server`.
+
+---
+
+## Bước 6 – Vòng 3: bước Green – KB server tham chiếu chạy thật
+
+**Thời gian:** 2026-10-27 · **Người làm:** Claude viết code (theo yêu cầu); Ngọc review và commit · **Commit:** chưa
+
+### What
+
+| File | Nội dung |
+|---|---|
+| `src/kb/server.ts` | `createKBServer(client)`: 4 route `POST /search`, `/list`, `/retrieve`, `/add`; đọc body JSON, kiểm tra kiểu từng trường, gọi client, trả status + JSON theo contract |
+| `src/kb/startServer.ts` | Điểm chạy: `createKBServer().listen(KB_PORT ?? 3000)` |
+| `package.json` | Script `"kb-server": "npm run build && node dist/kb/startServer.js"` |
+| `docs2/DECISIONS.md` | §6: thêm biến `KB_PORT` |
+| `test/kb/server.test.ts` | S7 thêm 1 trường hợp: `[]` gửi tới `/list` (xem phần kiểm tra đột biến) |
+
+### Why
+
+- **Mọi lỗi → status ở một chỗ** (hàm `handle`): `KBValidationError` → 400 `INVALID_INPUT`, `KBNotFoundError` → 404 `NOT_FOUND`, lỗi khác → 500 `INTERNAL` với thông báo chung (không lộ đường dẫn hay chi tiết bên trong).
+- **Endpoint lạ dùng lại `KBNotFoundError`** → cũng ra 404, không cần nhánh riêng.
+- **Kiểm tra kiểu trường ngay ở server** (`requiredString`, `optionalNumber`…): dữ liệu từ mạng có thể là bất cứ gì; `{ "query": 5 }` phải ra 400 chứ không được làm `.trim()` hỏng thành 500.
+- **`Object.hasOwn(routes, path)`**: cùng bài học tuần 2 – `/toString` không được coi là endpoint.
+- **`startServer.ts` tách riêng:** `server.ts` chỉ *tạo* server (test tự chọn cổng), còn việc *lắng nghe cổng 3000* nằm ở file chạy. Server cần build ra `dist/` trước vì Node không chạy trực tiếp TypeScript – script `kb-server` làm cả hai.
+
+### How
+
+```
+npx tsc --noEmit   → OK
+npx jest           → Tests: 42 passed, 42 total
+```
+
+**Kiểm tra đột biến** (`test/kb/server.test.ts`, trả code cũ sau mỗi lần):
+
+| # | Làm hỏng | Test đỏ |
+|---|---|---|
+| M1 | Chấp nhận mọi method (không chỉ POST) | S9 |
+| M2 | Lỗi 500 trả nguyên thông báo lỗi bên trong | S10 |
+| M3 | `/add` trả 200 thay vì 201 | S5 |
+| M4 | `/search` trả `{ document, matchType }` thay vì phẳng `{ id, …, matchType }` | S1, S2 |
+| M5 | Không từ chối body là mảng | **Lần đầu: không đỏ** → sau khi thêm `['/list', '[]']` vào S7: S7 |
+| M6 | Không kiểm tra kiểu chuỗi | S7 |
+| M7 | Không kiểm tra kiểu số (`topK: "2"`) | **Không đỏ** – xem dưới |
+| M8 | Không bắt lỗi JSON hỏng | S7 |
+
+- **M5:** S7 chỉ gửi `[]` tới `/search`, mà ở đó thiếu `query` cũng ra 400 → test không phân biệt được. Gửi `[]` tới `/list` (không có trường bắt buộc) thì chỉ còn bước kiểm tra "phải là object" chặn được → thêm dòng đó vào S7. Đây là **bổ sung test**, không đổi kỳ vọng nào cũ.
+- **M7 là đột biến tương đương** (không đổi hành vi): nếu server bỏ qua kiểm tra số, `"2"` vẫn tới client và client từ chối (`Number.isInteger("2")` là `false`) → vẫn 400. Giữ kiểm tra ở server vì thông báo rõ hơn (`"topK" must be a number`) và không phụ thuộc vào client.
+- **Một lần chạy không tái hiện được:** ngay sau loạt đột biến, một lần `npx jest` báo `1 failed, 41 passed` (không lưu được tên test). Đã xác nhận file đã được trả đúng (`cmp`), rồi chạy lại **9 lần liên tiếp: đều 42/42**. Ghi lại để theo dõi; nếu gặp lại sẽ lưu output để tìm nguyên nhân.
+
+**Chạy thật** (`KB_PORT=3456 npm run kb-server` rồi `curl`):
+
+```
+KB server listening on http://localhost:3456 (in-memory sample data, Ctrl+C to stop)
+
+$ curl -X POST http://localhost:3456/search -d '{"query":"response","topK":5}'
+{"results":[{"id":"doc-001","title":"Customer Response Template","nodePath":"/templates/email","tags":["template","email"],"matchType":"title"}]}  [HTTP 200]
+$ curl -X POST http://localhost:3456/list -d '{"nodePath":"/templates/email","limit":10}'
+{"documents":[{"id":"doc-001","title":"Customer Response Template","nodePath":"/templates/email","tags":["template","email"]}]}  [HTTP 200]
+$ curl -X POST http://localhost:3456/retrieve -d '{"docId":"doc-999"}'
+{"error":{"code":"NOT_FOUND","message":"document doc-999 not found"}}  [HTTP 404]
+$ curl -X POST http://localhost:3456/add -d '{"title":"SMS Reminder","content":"See you tomorrow.","nodePath":"/templates/sms","tags":["SMS"]}'
+{"document":{"id":"doc-004","title":"SMS Reminder","content":"See you tomorrow.","nodePath":"/templates/sms","tags":["sms"]}}  [HTTP 201]
+$ curl -X POST http://localhost:3456/search -d '{"query":""}'
+{"error":{"code":"INVALID_INPUT","message":"query must not be empty"}}  [HTTP 400]
+$ curl http://localhost:3456/search  (GET)
+{"error":{"code":"NOT_FOUND","message":"unknown endpoint GET /search"}}  [HTTP 404]
+```
+
+Ghi chú Windows: dừng `npm run kb-server` từ công cụ chạy nền chỉ dừng `npm`, tiến trình `node` con vẫn giữ cổng → phải dừng nó theo PID (`Get-NetTCPConnection -LocalPort 3456`). Khi chạy tay trong terminal, `Ctrl+C` dừng cả hai.
+
+### Kết quả / Ghi chú
+
+- ✅ Vòng 3 xanh; server chạy thật đúng contract.
+- Commit đề xuất: `feat(kb): add a reference KB server for the API contract`.

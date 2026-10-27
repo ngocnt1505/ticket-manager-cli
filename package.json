@@ -14,6 +14,7 @@
     "test:kb": "jest",
     "build": "tsc -p tsconfig.build.json",
     "typecheck": "tsc --noEmit",
+    "kb-server": "npm run build && node dist/kb/startServer.js",
     "coverage": "node --test --experimental-test-coverage \"test/unit/**/*.test.js\" \"test/integration/**/*.test.js\" && jest --coverage"
   },
   "engines": {

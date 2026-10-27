@@ -100,6 +100,7 @@ describe('KB server – errors: { error: { code, message } }', () => {
     for (const [path, body] of [
       ['/search', '{ not json'],
       ['/search', '[]'],
+      ['/list', '[]'],
       ['/search', { query: 5 }],
       ['/search', { query: 'team', topK: '2' }],
       ['/list', { nodePath: 7 }],

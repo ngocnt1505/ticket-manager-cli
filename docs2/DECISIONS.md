@@ -92,6 +92,7 @@ Mọi endpoint: `POST`, body và response là JSON (`Content-Type: application/j
 | `KB_CLIENT` | `mock` | `mock` hoặc `http` – **đổi client** (Đề: "swappable via environment variable") |
 | `KB_API_URL` | `http://localhost:3000` | Địa chỉ KB server khi `KB_CLIENT=http` |
 | `KB_DEBUG` | (tắt) | `1` → in từng request/response ra stderr (Đề: "logging to debug integration issues") |
+| `KB_PORT` | `3000` | Cổng của KB server tham chiếu (`npm run kb-server`) |
 
 ## 7. Lệnh và exit code (giữ quy ước tuần 2)
 
