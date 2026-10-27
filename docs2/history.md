@@ -167,7 +167,7 @@ npx jest           → Tests: 16 passed, 16 total
 
 ## Bước 3 – Vòng 2 (4 lệnh `kb`): bước Red
 
-**Thời gian:** 2026-10-27 · **Người làm:** Claude viết test + stub (theo yêu cầu); Ngọc review và commit · **Commit:** chưa
+**Thời gian:** 2026-10-27 · **Người làm:** Claude viết test + stub (theo yêu cầu); Ngọc review và commit · **Commit:** `b28a172`
 
 ### What
 
@@ -207,3 +207,60 @@ Lúc đầu C11 đỏ vì `KBNotFoundError` (đọc `doc-004` khi chưa được
 
 - ✅ Đỏ đúng lý do.
 - Commit đề xuất: `test(kb): add failing tests for the kb commands`.
+
+> **Cập nhật Bước 3:** Ngọc commit `b28a172 test(kb): add failing tests for the kb commands`.
+
+---
+
+## Bước 4 – Vòng 2: bước Green – 4 lệnh `kb` bằng Commander
+
+**Thời gian:** 2026-10-27 · **Người làm:** Claude viết code (theo yêu cầu); Ngọc review và commit · **Commit:** chưa
+
+### What
+
+`src/kb/cli.ts` – `run(argv, io)` dựng chương trình Commander với 4 lệnh `search`, `list`, `retrieve`, `add`, gọi `io.client` và in kết quả theo mẫu ở `DECISIONS.md` §7. **Không sửa test.**
+
+### Why
+
+- **Commander lo phần cú pháp:** đọc tham số, option bắt buộc, `--help` cho từng lệnh, báo lệnh lạ. Code của mình chỉ còn: gọi client và in kết quả.
+- **`exitOverride()`:** Commander mặc định gọi `process.exit` → test sẽ dừng cả Jest. Bật `exitOverride` thì Commander **ném** `CommanderError`, `run` bắt và trả exit code (giống tuần 2: `run` không bao giờ tự thoát).
+- **`configureOutput`:** Commander in qua `io.stdout` / `io.stderr` (không in thẳng ra màn hình) và đổi `error:` thành `Error:` cho giống quy ước tuần 2.
+- **Chọn exit code theo loại lỗi** (một chỗ duy nhất, trong `run`):
+
+| Lỗi | Exit |
+|---|---|
+| `CommanderError` (lệnh lạ, thiếu tham số, `--top-k` sai…) | 2 (riêng `--help` → 0) |
+| `KBValidationError` (client từ chối: node path sai, limit 0…) | 2 |
+| `KBError` khác (`KBNotFoundError`, file không đọc được) | 1 |
+| Lỗi bất ngờ | 1, in `Unexpected error: …` một dòng |
+
+- **`--top-k` / `--limit` được kiểm tra ngay ở CLI** (`positiveInteger`), không đợi client: nếu để `"abc"` thành `NaN` rồi gửi qua HTTP, JSON sẽ biến `NaN` thành `null` → server hiểu là "không có topK". Kiểm tra sớm thì mock và HTTP cho cùng một thông báo lỗi.
+- **`--node` không kiểm tra ở CLI** mà để client báo (`KBValidationError`) → luật node path chỉ nằm ở một chỗ.
+- File không đọc được → bọc thành `KBError('cannot read file "…"')` → exit 1, không lộ thông báo `ENOENT` của hệ điều hành.
+
+### How
+
+```
+npx tsc --noEmit   → OK
+npx jest           → Tests: 32 passed, 32 total
+```
+
+**Kiểm tra đột biến** (chạy `test/kb/cli.test.ts`, trả code cũ sau mỗi lần):
+
+| # | Làm hỏng | Test đỏ |
+|---|---|---|
+| M1 | Mọi `CommanderError` → exit 2 (kể cả `--help`) | C15 |
+| M2 | Bỏ nhánh `KBValidationError` (rơi xuống exit 1) | C7, C13 |
+| M3 | `positiveInteger` không kiểm tra số nguyên | C4 |
+| M4 | Không bọc lỗi đọc file | C12 |
+| M5 | Không lấy tiêu đề từ dòng `# heading` | C10 |
+| M6 | Không tách `--tags` theo dấu phẩy | C10 |
+| M7 | Giữ nguyên `error:` của Commander | C4, C5, C7, C13, C14 |
+
+7/7 đột biến bị bắt. Ghi chú: lần chạy đầu, 3 đột biến (M3, M4, M5) không áp dụng được vì lệnh `sed` escape sai / làm hỏng cú pháp (Jest báo `0 total`) → chạy lại bằng script Node thay chuỗi chính xác (`MSYS_NO_PATHCONV=1` cho chuỗi bắt đầu bằng `/`).
+
+### Kết quả / Ghi chú
+
+- ✅ Vòng 2 xanh. Chưa cần Refactor: mỗi lệnh 5–10 dòng, phần định dạng output đã tách thành hàm nhỏ (`summaryLine`, `detailLines`).
+- Lệnh `kb` chưa chạy được từ terminal (chưa có file bin) – làm ở vòng 5.
+- Commit đề xuất: `feat(kb): add the kb search, list, retrieve and add commands`.
