@@ -658,7 +658,7 @@ Bốn lệnh mẫu trong `tasks.md` (`kb search "response" --top-k 3`, `kb list 
 
 ## Bước 11 – Tài liệu: README phần `kb`, TEST-RESULTS, đối chiếu AC
 
-**Thời gian:** 2026-10-27 · **Người làm:** Claude viết tài liệu và chạy kiểm chứng (theo yêu cầu); Ngọc review và commit · **Commit:** chưa
+**Thời gian:** 2026-10-27 · **Người làm:** Claude viết tài liệu và chạy kiểm chứng (theo yêu cầu); Ngọc review và commit · **Commit:** `56d2acf`
 
 ### What
 
@@ -696,3 +696,61 @@ Mọi con số và ví dụ trong tài liệu đều được **chạy lại đ�
 
 - ✅ Đủ 4 AC (AC 4 có giới hạn đã ghi rõ) và đủ Deliverables của `tasks.md` – bảng đối chiếu ở `TEST-RESULTS.md` mục 8.
 - Commit đề xuất: `docs(kb): document the kb CLI, API contract and test results`.
+
+
+> **Cập nhật Bước 11:** Ngọc commit `56d2acf docs(kb): document the kb CLI, API contract and test results`.
+
+---
+
+## Tổng kết làm việc với AI
+
+Giống tuần 2: không có file `AI-LOG.md` riêng. Phần này tổng hợp từ dòng **"Người làm"** của các Bước 0–11 ở trên.
+
+### Ai làm gì
+
+| | Ngọc | Claude (Claude Code) |
+|---|---|---|
+| **Phạm vi và kế hoạch** | Đặt ràng buộc: còn 1 ngày tới deadline, **không hỏi mentor**. Chọn chỉ viết phần KB bằng TypeScript (giữ `tickets` tuần 2), TDD gọn theo nhóm, cùng repo + tag `week2-submission` | Đọc đề `docs2/`, liệt kê 6 câu hỏi còn mở (Q1–Q6), đề xuất kế hoạch 5 vòng Red → Green |
+| **Thiết kế** | Quyết định Q1–Q6: lệnh `kb` riêng, tìm không phân biệt hoa thường trên tiêu đề/tag/nội dung, `topK` và `limit` mặc định 10, tự thiết kế response/lỗi | Đề xuất **server tham chiếu** khi không có URL KB thật; soạn `DECISIONS.md` (dữ liệu, luật, API contract, biến môi trường, exit code) |
+| **Code và test** | Review từng bước | Viết toàn bộ test, stub và code (theo yêu cầu "làm giúp, tôi review và commit") |
+| **Git** | **Mọi commit và push**: 14 commit từ `ffc89a1` tới `56d2acf`; gắn tag `week2-submission` | Không commit lần nào; chỉ đề xuất nội dung commit |
+| **Kiểm tra** | | 40 đột biến, coverage, clone sạch, `npm link` + chạy thật cả hai chế độ, `curl` |
+| **Tài liệu** | Yêu cầu bỏ phần log đọc đề / hỏi đáp, bắt đầu log từ lúc cài đặt | Soạn `README.md` (phần `kb`), `TEST-RESULTS.md`, nhật ký này |
+
+### Những quyết định Ngọc chọn khác đề xuất ban đầu
+
+- **Q1 – phạm vi TypeScript:** AI hỏi có viết lại cả dự án bằng TypeScript + Jest không. Ngọc chọn **chỉ phần KB mới**: `tickets` đã được chấm pass nên không đụng tới.
+- **Cách làm TDD:** thay vì từng test một như tuần 2, Ngọc chọn **mỗi nhóm hành vi một commit Red + một commit Green** cho kịp deadline.
+- **Q2/Q3 – thiếu thông tin về KB API:** cách thông thường là hỏi mentor URL server và format response. Ngọc không hỏi và yêu cầu tìm cách khác → AI đọc lại `tasks.md`, thấy dòng *"Access to KB API server (mock or real)"* → đề xuất server tham chiếu + tự thiết kế contract.
+- **Nhật ký:** Ngọc xóa hai bước đầu (đọc đề, hỏi đáp Q1–Q6) và chỉ log từ bước cài đặt.
+
+### Những lần AI sai hoặc thiếu và được kiểm chứng lại
+
+| Bước | Sai sót / thiếu sót | Phát hiện bằng | Xử lý |
+|---|---|---|---|
+| 0 | `npm install commander` cài bản 15 (chỉ ESM, dễ lỗi với Jest) | Đọc `package.json` của thư viện sau khi cài | Ghim bản 14 (CommonJS) |
+| 2, 3 | `DECISIONS.md` lệch với test: doc-003 thiếu tag `onboarding`; `kb search --tags` có trong thiết kế nhưng đề không yêu cầu và kiểu dữ liệu không có | Khi viết code, đối chiếu lại tài liệu | Sửa `DECISIONS.md` cho khớp; bỏ `--tags` khỏi `search` |
+| 3, 7, 9 | 3 test đỏ **sai lý do** (C11, H4, E5: `TypeError` / lỗi khác thay vì assertion) | Đọc lý do đỏ của từng test trước khi commit Red | Thêm assertion đứng trước |
+| 4 | 3 lệnh đột biến hỏng (escape `sed` sai, làm file lỗi cú pháp – Jest báo `0 total`) | Đọc kỹ kết quả từng đột biến, không chỉ đếm số đỏ | Chạy lại bằng script Node thay chuỗi chính xác |
+| 6 | Test S7 do AI viết **không bắt được** server nhận body là mảng | Đột biến M5 không đỏ | Bổ sung trường hợp `[]` gửi tới `/list` |
+| 6 | Dừng `npm run kb-server` chạy nền nhưng tiến trình `node` con vẫn giữ cổng | Gọi lại server sau khi "đã dừng" – vẫn trả lời | Tìm và dừng theo PID; ghi chú trong nhật ký |
+| 6 | Một lần chạy `1 failed` không tái hiện được | Đọc kết quả lần chạy cuối sau loạt đột biến | Xác nhận code đã trả đúng, chạy lại nhiều lần đều xanh; ghi lại minh bạch |
+| 10 | Test e2e chỉ dùng chữ ASCII → đọc file sai bảng mã vẫn xanh | Đột biến M8 (`latin1`) không đỏ | X2 dùng tiêu đề tiếng Việt |
+| 11 | README tuần 2 còn số liệu cũ (84 test, 99 % nhánh) | Chạy lại để lấy số liệu trước khi viết | Sửa thành 86 test, 100 % nhánh |
+| 11 | Ví dụ README `kb list --node /team` lỗi trong Git Bash | Chạy thử chính ví dụ trong README | Ghi giới hạn và cách tránh vào README |
+| 11 | Lệnh ghi log để dấu backtick trong chuỗi bash → bash chạy các đoạn đó như lệnh và ghi đoạn log hỏng vào file | Đọc output lỗi của lệnh | Cắt file về đúng chỗ, kiểm tra bằng `git diff --stat`, viết lại qua file tạm |
+
+### Nhận xét trung thực
+
+- **Toàn bộ code và test tuần 3 do AI viết.** Vai trò của Ngọc là đặt ràng buộc, ra quyết định thiết kế, review và commit. Khi bảo vệ, Ngọc cần giải thích được:
+  1. vì sao có **bộ test chung** `describeKBClient` chạy cho cả hai client;
+  2. vì sao viết **server tham chiếu** và nó dùng lại luật của mock;
+  3. cách lỗi HTTP được đổi thành exit code (400 → 2; 404, 5xx, mất kết nối → 1);
+  4. lý do đỏ của ít nhất một vòng, ví dụ vòng 1 (Bước 1–2).
+- **Đánh đổi của TDD gọn:** lịch sử commit vẫn đúng thứ tự `test(kb)` đỏ → `feat(kb)` xanh, nhưng mỗi commit Red chứa cả nhóm test (6–22 test), không chi tiết từng test như tuần 2. Không có commit `refactor` riêng vì sau mỗi bước Green code đã gọn (đã ghi lý do ở từng bước).
+- **AC 4 có giới hạn:** chưa từng gọi tới một KB API thật của tổ chức, vì không được cấp URL. Client đã được test bằng HTTP thật với server tham chiếu, và ghi rõ điều này trong README và `TEST-RESULTS.md`.
+- **Đã áp dụng góp ý tuần 2 của mentor:** commit cài đặt dùng `chore:` (`56ca9fc`, `412b3af`); giữ cách tách commit `test` / `feat` và bằng chứng chạy thật.
+- **Bài học:**
+  - Bộ test chung bắt được 4/11 đột biến của `HTTPKBClient`, đúng tinh thần đề bài *"same behavior = easy to compare and test"*.
+  - Kiểm tra đột biến tìm ra 2 test yếu mà coverage không thấy: dòng code vẫn được chạy, nhưng không test nào kiểm tra kết quả của nó.
+  - Chạy thật từng ví dụ trong tài liệu phát hiện lỗi môi trường (Git Bash) và số liệu cũ.
