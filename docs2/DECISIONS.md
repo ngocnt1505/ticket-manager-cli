@@ -76,7 +76,7 @@ Mọi endpoint: `POST`, body và response là JSON (`Content-Type: application/j
 | 404 | `NOT_FOUND` | `retrieve` id không tồn tại; endpoint lạ |
 | 500 | `INTERNAL` | Lỗi phía server |
 
-## 5. KB server – trả lời Q2 (không có URL server thật)
+## 5. KB server – (không có URL server thật)
 
 | Quyết định | Nguồn |
 |---|---|
