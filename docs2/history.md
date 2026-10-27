@@ -59,7 +59,7 @@ File này ghi lại **từng bước** của bài tuần 3 theo thứ tự thờ
 
 ## Bước 1 – Vòng 1 (`KBClient` + `MockKBClient`): bước Red – bộ test chung cho mọi client
 
-**Thời gian:** 2026-10-27 · **Người làm:** Claude viết test + stub (theo yêu cầu); Ngọc review và commit · **Commit:** chưa
+**Thời gian:** 2026-10-27 · **Người làm:** Claude viết test + stub (theo yêu cầu); Ngọc review và commit · **Commit:** `412b3af`, `0e77b9a`
 
 ### What
 
@@ -110,3 +110,53 @@ Lý do đỏ của từng test đều là **assertion**, không có `TypeError`:
 - Commit đề xuất – **2 commit**, để thay đổi cấu hình không lẫn vào commit Red:
   1. `chore: speed up Jest by transpiling only` – `tsconfig.json`, `jest.config.js`;
   2. `test(kb): add failing contract tests for the KB client` – `src/kb`, `test/kb`, `docs2/history.md`.
+
+> **Cập nhật Bước 1:** Ngọc commit `412b3af chore: speed up Jest by transpiling only` và `0e77b9a test(kb): add failing contract tests for the KB client`.
+
+---
+
+## Bước 2 – Vòng 1: bước Green – `MockKBClient` chạy thật
+
+**Thời gian:** 2026-10-27 · **Người làm:** Claude viết code (theo yêu cầu); Ngọc review và commit · **Commit:** chưa
+
+### What
+
+| File | Nội dung |
+|---|---|
+| `src/kb/errors.ts` | `KBError` (có `code`), `KBValidationError` (`INVALID_INPUT`), `KBNotFoundError` (`NOT_FOUND`) |
+| `src/kb/mockClient.ts` | `SEED_DOCUMENTS` (3 tài liệu mẫu) + `MockKBClient` cài đủ 4 hàm theo `DECISIONS.md` §3 |
+| `docs2/DECISIONS.md` | Bảng dữ liệu mẫu: doc-003 có tag `guide, onboarding` cho khớp với test |
+
+**Không sửa test.**
+
+### Why
+
+- **Chỉ viết đủ để test xanh:** chưa có lỗi kết nối hay lỗi API, vì những lỗi đó chỉ cần cho `HTTPKBClient` ở vòng 4.
+- **Nội dung tài liệu mẫu được chọn theo test**, ví dụ doc-001 và doc-003 có chữ "team" trong nội dung (K3), còn doc-003 có chữ "email" trong nội dung (K2).
+- **Mỗi client có bản sao dữ liệu riêng** (`documents.map(copy)`), nên `add` ở test này không làm bẩn test khác. Ở vòng 3, server tham chiếu sẽ dùng lại chính `MockKBClient` làm kho dữ liệu.
+- **Tên lỗi lấy từ `new.target.name`**, nên lớp con tự có `name` đúng (`KBValidationError`…) mà không phải viết tay.
+
+### How
+
+```
+npx tsc --noEmit   → OK
+npx jest           → Tests: 16 passed, 16 total
+```
+
+**Kiểm tra đột biến** (cố tình làm hỏng code, xem test có đỏ không, rồi trả lại code cũ):
+
+| # | Làm hỏng | Test đỏ |
+|---|---|---|
+| M1 | `list` bỏ ranh giới `/` (`startsWith(node)`) → `/temp` khớp nhầm `/templates` | K10 |
+| M2 | Bỏ sắp xếp theo loại khớp, chỉ sắp theo id | K3, K4 |
+| M3 | Không bỏ tag trùng | K15 |
+| M4 | Không kiểm tra `title` rỗng | K16 |
+| M5 | Cho phép `topK` không phải số nguyên (1.5) | K8 |
+| M6 | Dùng chung mảng dữ liệu mẫu thay vì bản sao | K16 (doc-004 của K15 lọt sang) |
+
+6/6 đột biến bị bắt. Trả code cũ → 16/16 xanh.
+
+### Kết quả / Ghi chú
+
+- ✅ Vòng 1 xanh. Chưa cần Refactor: code ngắn, mỗi luật là một hàm nhỏ.
+- Commit đề xuất: `feat(kb): add an in-memory mock KB client`.

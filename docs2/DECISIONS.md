@@ -45,7 +45,7 @@ interface KBQuery {             // Đề – tasks.md: (query, filters, topK)
 |---|---|---|---|
 | `doc-001` | Customer Response Template | `/templates/email` | template, email |
 | `doc-002` | DevOps Team Members | `/team/devops` | team, devops |
-| `doc-003` | Getting Started Guide | `/docs/guides` | guide |
+| `doc-003` | Getting Started Guide | `/docs/guides` | guide, onboarding |
 
 ## 3. Luật nghiệp vụ (mock và HTTP phải giống hệt nhau) – Thiết kế
 
